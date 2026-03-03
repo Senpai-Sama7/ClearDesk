@@ -13,12 +13,15 @@ const headers = () => ({
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_KV_NAMESPACE_ID, CLOUDFLARE_API_TOKEN } = process.env;
   if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_KV_NAMESPACE_ID || !CLOUDFLARE_API_TOKEN) {
-    return res.status(500).json({ error: 'Cloudflare KV not configured' });
+    // Graceful degradation — sync unavailable but app still works
+    if (req.method === 'GET') return res.json({ documents: [] });
+    return res.json({ ok: true, warning: 'Cloud sync not configured — data saved locally only' });
   }
 
   const url = new URL(req.url || '', `http://${req.headers.host}`);
   const userId = (req.method === 'GET' ? url.searchParams.get('userId') : req.body?.userId) as string;
-  if (!userId || !/^[a-f0-9-]{36}$/.test(userId)) {
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!userId || !UUID_RE.test(userId)) {
     return res.status(400).json({ error: 'Invalid userId' });
   }
 

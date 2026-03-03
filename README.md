@@ -69,9 +69,14 @@ Open `http://localhost:3000`
 
 ## Environment Variables
 
-| Variable | Description |
-|---|---|
-| `ANTHROPIC_API_KEY` | Your Anthropic API key. Never exposed client-side. |
+| Variable | Description | Required? |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Your Anthropic API key. Never exposed client-side. | Yes |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID (Dashboard → Overview) | Optional — enables cross-device sync |
+| `CLOUDFLARE_KV_NAMESPACE_ID` | KV namespace ID (Workers & Pages → KV) | Optional — enables cross-device sync |
+| `CLOUDFLARE_API_TOKEN` | API token with Workers KV Storage: Edit permission | Optional — enables cross-device sync |
+
+If the Cloudflare variables are not set, the app works normally with localStorage only — no errors, no broken features.
 
 ---
 

@@ -12,6 +12,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { content, filename, settings } = req.body;
     if (!content || !filename) return res.status(400).json({ error: 'content and filename required' });
 
+    // Guard against oversized documents — truncate at 50k chars
+    const MAX_CHARS = 50000;
+    const truncated = content.length > MAX_CHARS;
+    const safeContent = truncated ? content.slice(0, MAX_CHARS) : content;
+
     const t = settings?.thresholds || { critical: 50000, high: 10000, medium: 1000 };
     const r = settings?.escalationRules || { disputes: true, lowConfidence: true, exceedsCritical: true, dueSoon: false };
 
@@ -31,7 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
+        max_tokens: 4096,
         system: `You are an expert AI assistant for accounts receivable document processing.
 Analyze the provided document and return ONLY a JSON response:
 {
@@ -68,7 +73,7 @@ OTHER RULES:
 - escalationReasons severity: "blocking" = cannot proceed without human, "warning" = should review but can proceed, "informational" = FYI only.
 - summary: exactly 3 sentences max. Sentence 1: what this document IS and who it involves. Sentence 2: what ACTION is required and by when. Sentence 3 (only if escalation): why this needs human attention. Write in plain, clear English for someone whose first language is not English. Never exceed 3 sentences.
 Return ONLY JSON.`,
-        messages: [{ role: 'user', content: `Analyze this document:\n\nFilename: ${filename}\n\nContent:\n${content}` }],
+        messages: [{ role: 'user', content: `Analyze this document:\n\nFilename: ${filename}${truncated ? '\n\n[NOTE: Document truncated to first 50,000 characters]' : ''}\n\nContent:\n${safeContent}` }],
       }),
     });
 
