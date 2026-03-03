@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, Play, Eye, Download, X } from 'lucide-react';
+import { FileText, Play, Eye, Download, X, FolderOpen } from 'lucide-react';
 import { Button } from '../ui/Button';
 import mammoth from 'mammoth';
 
@@ -52,13 +52,26 @@ export function SampleDocuments({ onProcessFile }: Props) {
     a.click();
   };
 
+  const openPreview = async (s: typeof samples[0]) => {
+    if (preview === s.file) { setPreview(null); setPreviewContent(null); return; }
+    setPreview(s.file);
+    if (s.file.endsWith('.docx')) {
+      const r = await fetch(`/samples/${encodeURIComponent(s.file)}`);
+      const { value } = await mammoth.convertToHtml({ arrayBuffer: await r.arrayBuffer() });
+      setPreviewContent(value);
+    } else if (!s.file.endsWith('.pdf')) {
+      const r = await fetch(`/samples/${encodeURIComponent(s.file)}`);
+      setPreviewContent(await r.text());
+    } else { setPreviewContent(null); }
+  };
+
   if (!open) {
     return (
       <div className="mt-4 pt-4 border-t border-border">
-        <button onClick={() => setOpen(true)}
-          className="text-xs text-accent hover:text-accent/80 transition-colors cursor-pointer">
-          No documents handy? Try one of 15 sample documents →
-        </button>
+        <Button variant="secondary" size="sm" onClick={() => setOpen(true)} leftIcon={<FolderOpen className="w-3.5 h-3.5" />}>
+          Try a sample document
+        </Button>
+        <p className="text-[11px] text-text-secondary mt-1.5">15 samples across 5 formats — no upload needed</p>
       </div>
     );
   }
@@ -67,7 +80,7 @@ export function SampleDocuments({ onProcessFile }: Props) {
     <div className="mt-4 pt-4 border-t border-border space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-xs text-text-secondary">15 samples across 5 formats — click Process to analyze directly.</p>
-        <button onClick={() => { setOpen(false); setPreview(null); }} className="text-text-secondary hover:text-text-primary">
+        <button onClick={() => { setOpen(false); setPreview(null); setPreviewContent(null); }} className="text-text-secondary hover:text-text-primary">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -81,57 +94,55 @@ export function SampleDocuments({ onProcessFile }: Props) {
         ))}
       </div>
 
-      <div className="grid gap-1.5 max-h-72 overflow-y-auto">
-        {filtered.map(s => (
-          <div key={s.file} className={`flex items-center gap-3 bg-bg border rounded-lg px-3 py-2 transition-colors ${preview === s.file ? 'border-accent' : 'border-border hover:border-border-hover'}`}>
-            <FileText className="w-3.5 h-3.5 text-text-secondary flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-text-primary truncate">{s.name}</p>
-              <p className="text-[11px] text-text-secondary">{s.desc} · <span className="font-mono">{s.fmt}</span></p>
+      <div className={`flex gap-3 ${preview ? '' : ''}`}>
+        {/* Sample list */}
+        <div className={`grid gap-1.5 max-h-[28rem] overflow-y-auto ${preview ? 'w-1/2' : 'w-full'}`}>
+          {filtered.map(s => (
+            <div key={s.file} className={`flex items-center gap-3 bg-bg border rounded-lg px-3 py-2 transition-colors ${preview === s.file ? 'border-accent' : 'border-border hover:border-border-hover'}`}>
+              <FileText className="w-3.5 h-3.5 text-text-secondary flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-text-primary truncate">{s.name}</p>
+                <p className="text-[11px] text-text-secondary">{s.desc} · <span className="font-mono">{s.fmt}</span></p>
+              </div>
+              <div className="flex gap-1.5 flex-shrink-0">
+                <button onClick={() => openPreview(s)}
+                    className={`p-1.5 rounded transition-colors ${preview === s.file ? 'text-accent bg-accent/10' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`} title="Preview">
+                  <Eye className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => downloadFile(s)}
+                    className="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-surface transition-colors" title="Download">
+                  <Download className="w-3.5 h-3.5" />
+                </button>
+                <Button variant="primary" size="sm" onClick={() => processNow(s)} disabled={loading === s.file}
+                  leftIcon={<Play className="w-3 h-3" />}>
+                  {loading === s.file ? '…' : 'Process'}
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-1.5 flex-shrink-0">
-              <button onClick={async () => {
-                    if (preview === s.file) { setPreview(null); setPreviewContent(null); }
-                    else {
-                      setPreview(s.file);
-                      if (s.file.endsWith('.docx')) {
-                        const r = await fetch(`/samples/${encodeURIComponent(s.file)}`);
-                        const buf = await r.arrayBuffer();
-                        const { value } = await mammoth.convertToHtml({ arrayBuffer: buf });
-                        setPreviewContent(value);
-                      } else if (!s.file.endsWith('.pdf')) {
-                        const r = await fetch(`/samples/${encodeURIComponent(s.file)}`);
-                        setPreviewContent(await r.text());
-                      } else { setPreviewContent(null); }
-                    }
-                  }}
-                  className="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-surface transition-colors" title="Preview">
-                <Eye className="w-3.5 h-3.5" />
+          ))}
+        </div>
+
+        {/* Preview panel — side by side */}
+        {preview && (
+          <div className="w-1/2 border border-border rounded-lg overflow-hidden bg-bg flex flex-col max-h-[28rem]">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-surface">
+              <p className="text-xs text-text-primary truncate font-medium">{preview}</p>
+              <button onClick={() => { setPreview(null); setPreviewContent(null); }} className="text-text-secondary hover:text-text-primary">
+                <X className="w-3.5 h-3.5" />
               </button>
-              <button onClick={() => downloadFile(s)}
-                  className="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-surface transition-colors" title="Download">
-                <Download className="w-3.5 h-3.5" />
-              </button>
-              <Button variant="primary" size="sm" onClick={() => processNow(s)} disabled={loading === s.file}
-                leftIcon={<Play className="w-3 h-3" />}>
-                {loading === s.file ? 'Loading…' : 'Process'}
-              </Button>
+            </div>
+            <div className="flex-1 overflow-auto">
+              {preview.endsWith('.pdf') ? (
+                <iframe src={`/samples/${encodeURIComponent(preview)}`} className="w-full h-full min-h-[24rem]" title="Sample preview" />
+              ) : preview.endsWith('.docx') ? (
+                <div className="p-4 text-sm text-text-primary prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: previewContent ?? '<p>Loading…</p>' }} />
+              ) : (
+                <pre className="p-4 text-xs text-text-primary font-mono whitespace-pre-wrap">{previewContent ?? 'Loading…'}</pre>
+              )}
             </div>
           </div>
-        ))}
+        )}
       </div>
-
-      {preview && (
-        <div className="border border-border rounded-lg overflow-hidden bg-bg">
-          {preview.endsWith('.pdf') ? (
-            <iframe src={`/samples/${encodeURIComponent(preview)}`} className="w-full h-96" title="Sample preview" />
-          ) : preview.endsWith('.docx') ? (
-            <div className="p-4 text-sm text-text-primary overflow-auto max-h-96 prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: previewContent ?? '<p>Loading…</p>' }} />
-          ) : (
-            <pre className="p-4 text-xs text-text-primary font-mono whitespace-pre-wrap overflow-auto max-h-96">{previewContent ?? 'Loading…'}</pre>
-          )}
-        </div>
-      )}
     </div>
   );
 }
