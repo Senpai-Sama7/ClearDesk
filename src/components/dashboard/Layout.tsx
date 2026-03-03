@@ -32,7 +32,7 @@ export function Layout({ children, onNavigate, activeView = 'dashboard' }: Layou
         <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      <aside data-tour="sidebar" className={classNames(
+      <aside className={classNames(
         'fixed lg:static inset-y-0 left-0 z-50 w-60 bg-bg border-r border-border flex flex-col transition-transform duration-200',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       )}>
@@ -50,7 +50,6 @@ export function Layout({ children, onNavigate, activeView = 'dashboard' }: Layou
             return (
               <button
                 key={item.id}
-                data-tour={item.id === 'settings' ? 'settings-nav' : undefined}
                 onClick={() => { onNavigate?.(item.id); setSidebarOpen(false); }}
                 className={classNames(
                   'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer',
@@ -73,7 +72,7 @@ export function Layout({ children, onNavigate, activeView = 'dashboard' }: Layou
             </button>
           </div>
 
-          <div data-tour="search" className="flex items-center bg-surface border border-border rounded-lg px-3 py-1.5 w-64 lg:w-80">
+          <div className="flex items-center bg-surface border border-border rounded-lg px-3 py-1.5 w-64 lg:w-80">
             <Search className="w-4 h-4 text-text-secondary mr-2 flex-shrink-0" aria-hidden="true" />
             <input
               type="text"

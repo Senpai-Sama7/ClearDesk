@@ -102,7 +102,7 @@ export function FileUpload() {
   }, [handleFiles]);
 
   return (
-    <div className="space-y-4" data-tour="upload">
+    <div className="space-y-4">
       <div
         onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}

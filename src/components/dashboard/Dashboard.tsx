@@ -8,7 +8,6 @@ import { ExportPanel } from './ExportPanel';
 import { FileUpload } from '../upload/FileUpload';
 import { SampleDocuments } from './SampleDocuments';
 import { SettingsPanel } from './SettingsPanel';
-import { Tour } from '../tour/Tour';
 import { useDocuments } from '../../contexts/DocumentContext';
 import { Button } from '../ui/Button';
 import { Plus, Upload } from 'lucide-react';
@@ -19,7 +18,6 @@ export function Dashboard() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [activeView, setActiveView] = useState('dashboard');
   const [showUpload, setShowUpload] = useState(false);
-  const [tourActive, setTourActive] = useState(() => !localStorage.getItem('cleardesk_tour_completed'));
 
   const handleCardClick = (id: string) => {
     selectDocument(id);
@@ -35,7 +33,7 @@ export function Dashboard() {
   return (
     <Layout onNavigate={handleNavigate} activeView={activeView}>
       {activeView === 'settings' ? (
-        <SettingsPanel onStartTour={() => setTourActive(true)} />
+        <SettingsPanel />
       ) : (
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8">
@@ -45,7 +43,7 @@ export function Dashboard() {
                 {filteredDocuments.length} document{filteredDocuments.length !== 1 ? 's' : ''}
               </p>
             </div>
-            <Button data-tour="upload-btn" variant="primary" size="md" onClick={() => setShowUpload(!showUpload)} leftIcon={<Plus className="w-4 h-4" />}>
+            <Button variant="primary" size="md" onClick={() => setShowUpload(!showUpload)} leftIcon={<Plus className="w-4 h-4" />}>
               Upload
             </Button>
           </div>
@@ -90,7 +88,6 @@ export function Dashboard() {
 
       <DocumentDetail isOpen={isDetailOpen} onClose={() => { setIsDetailOpen(false); selectDocument(null); }} />
       <ExportPanel isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} />
-      {tourActive && <Tour onComplete={() => { setTourActive(false); localStorage.setItem('cleardesk_tour_completed', '1'); }} />}
     </Layout>
   );
 }

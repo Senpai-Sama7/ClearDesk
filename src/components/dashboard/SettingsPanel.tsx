@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useDocuments } from '../../contexts/DocumentContext';
 import { Button } from '../ui/Button';
-import { Trash2, RotateCcw, X, Sun, Moon, Monitor, Copy, Download } from 'lucide-react';
+import { Trash2, X, Sun, Moon, Monitor, Copy, Download } from 'lucide-react';
 import { classNames } from '../../utils/formatters';
 import { getThresholds, getEscalationRules, getTeamMembers, saveThresholds, saveEscalationRules, saveTeamMembers } from '../../utils/settings';
 import type { Thresholds, EscalationRules } from '../../utils/settings';
@@ -9,7 +9,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { getUserId, setUserId, pullFromKV } from '../../services/syncService';
 import type { Document } from '../../types/document';
 
-interface SettingsPanelProps { onStartTour: () => void; }
+// no props needed
 
 const themeOptions = [
   { value: 'system' as const, icon: Monitor, label: 'System' },
@@ -17,7 +17,7 @@ const themeOptions = [
   { value: 'dark' as const, icon: Moon, label: 'Dark' },
 ];
 
-export function SettingsPanel({ onStartTour }: SettingsPanelProps) {
+export function SettingsPanel() {
   const { state, dispatch } = useDocuments();
   const { theme, setTheme } = useTheme();
   const [thresholds, setThresholds] = useState(getThresholds);
@@ -158,11 +158,6 @@ export function SettingsPanel({ onStartTour }: SettingsPanelProps) {
         <p className="text-[11px] text-text-secondary">Team members populate the assignee dropdown on document cards</p>
       </Section>
 
-      <Section title="Help">
-        <p className="text-xs text-text-secondary">Take a guided tour of ClearDesk to learn how everything works.</p>
-        <Button variant="secondary" size="sm" onClick={() => { localStorage.removeItem('cleardesk_tour_completed'); onStartTour(); }}
-          leftIcon={<RotateCcw className="w-3.5 h-3.5" />}>Replay Tour</Button>
-      </Section>
 
       <Section title="Data Management">
         <p className="text-xs text-text-secondary">{state.documents.length} document{state.documents.length !== 1 ? 's' : ''} stored in this browser</p>
