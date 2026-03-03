@@ -6,6 +6,7 @@ import { DocumentCard } from './DocumentCard';
 import { DocumentDetail } from './DocumentDetail';
 import { ExportPanel } from './ExportPanel';
 import { FileUpload } from '../upload/FileUpload';
+import { SampleDocuments } from './SampleDocuments';
 import { SettingsPanel } from './SettingsPanel';
 import { Tour } from '../tour/Tour';
 import { useDocuments } from '../../contexts/DocumentContext';
@@ -58,6 +59,7 @@ export function Dashboard() {
                 <button onClick={() => setShowUpload(false)} className="text-text-secondary hover:text-text-primary text-sm">Close</button>
               </div>
               <FileUpload />
+              <SampleDocuments />
             </div>
           )}
 
