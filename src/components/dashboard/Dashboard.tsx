@@ -21,7 +21,7 @@ export function Dashboard() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [activeView, setActiveView] = useState('dashboard');
-  const [showUpload, setShowUpload] = useState(false);
+
   const handleFilesRef = useRef<((files: File[]) => void) | null>(null);
 
   const handleCardClick = (id: string) => {
@@ -30,13 +30,7 @@ export function Dashboard() {
   };
 
   const handleNavigate = (view: string) => {
-    if (view === 'upload') {
-      setActiveView('upload');
-      setShowUpload(true);
-    } else {
-      setActiveView(view);
-      setShowUpload(view === 'documents' && showUpload);
-    }
+    setActiveView(view);
   };
 
   return (
@@ -47,33 +41,52 @@ export function Dashboard() {
         <HelpPanel />
       ) : activeView === 'about' ? (
         <AboutPanel />
-      ) : activeView === 'documents' || activeView === 'upload' ? (
+      ) : activeView === 'upload' ? (
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8">
+            <h1 className="font-heading text-2xl font-bold text-text-primary">Upload &amp; Process</h1>
+            <p className="text-sm text-text-secondary mt-1">Drop files or pick a sample — AI analysis starts immediately.</p>
+          </div>
+
+          <div className="bg-surface border border-border rounded-lg p-6 mb-6">
+            <FileUpload onHandleFiles={(h) => { handleFilesRef.current = h; }} />
+            <SampleDocuments onProcessFile={(file) => handleFilesRef.current?.([file])} />
+          </div>
+
+          {/* Recently processed — upload confirmation */}
+          {filteredDocuments.length > 0 && (
+            <div>
+              <h2 className="text-sm font-medium text-text-secondary mb-3">Recently Processed</h2>
+              <div className="space-y-1.5">
+                {filteredDocuments.slice(0, 5).map(doc => (
+                  <button key={doc.id} onClick={() => handleCardClick(doc.id)}
+                    className="w-full flex items-center gap-3 bg-surface border border-border rounded-lg px-4 py-2.5 text-left hover:border-border-hover transition-colors">
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      doc.priority === 'critical' ? 'bg-[#FF4444]' : doc.priority === 'high' ? 'bg-[#FF8800]' : doc.priority === 'medium' ? 'bg-[#FFCC00]' : 'bg-accent'
+                    }`} />
+                    <span className="text-sm text-text-primary truncate flex-1">{doc.originalName}</span>
+                    <span className="text-[11px] text-text-secondary capitalize flex-shrink-0">{doc.status.replace('-', ' ')}</span>
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => handleNavigate('documents')} className="mt-3 text-xs text-accent hover:text-accent/80 transition-colors">
+                View all {filteredDocuments.length} documents →
+              </button>
+            </div>
+          )}
+        </div>
+      ) : activeView === 'documents' ? (
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="font-heading text-2xl font-bold text-text-primary">
-                {activeView === 'upload' ? 'Upload & Process' : 'Documents'}
-              </h1>
+              <h1 className="font-heading text-2xl font-bold text-text-primary">Documents</h1>
               <p className="text-sm text-text-secondary mt-1">
-                {filteredDocuments.length} document{filteredDocuments.length !== 1 ? 's' : ''}
+                {filteredDocuments.length} document{filteredDocuments.length !== 1 ? 's' : ''} processed
               </p>
             </div>
-            <Button variant="primary" size="md" onClick={() => setShowUpload(!showUpload)} leftIcon={<Plus className="w-4 h-4" />}>
-              Upload
+            <Button variant="primary" size="md" onClick={() => handleNavigate('upload')} leftIcon={<Plus className="w-4 h-4" />}>
+              Upload More
             </Button>
-          </div>
-
-          <div className="mb-8 bg-surface border border-border rounded-lg p-6">
-            {showUpload && (
-              <>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-sm font-medium text-text-primary">Upload Documents</h2>
-                  <button onClick={() => setShowUpload(false)} className="text-text-secondary hover:text-text-primary text-sm">Close</button>
-                </div>
-                <FileUpload onHandleFiles={(h) => { handleFilesRef.current = h; }} />
-              </>
-            )}
-            <SampleDocuments onProcessFile={(file) => handleFilesRef.current?.([file])} />
           </div>
 
           <FilterPanel onExport={() => setIsExportOpen(true)} />
@@ -93,7 +106,7 @@ export function Dashboard() {
             <div className="flex flex-col items-center justify-center py-20">
               <Upload className="w-8 h-8 text-text-secondary mb-4" />
               <p className="text-text-secondary text-sm">No documents yet</p>
-              <Button variant="secondary" size="sm" className="mt-4" onClick={() => setShowUpload(true)}>
+              <Button variant="secondary" size="sm" className="mt-4" onClick={() => handleNavigate('upload')}>
                 Upload your first document
               </Button>
             </div>
