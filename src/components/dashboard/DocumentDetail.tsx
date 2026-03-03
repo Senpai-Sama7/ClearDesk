@@ -3,7 +3,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { PriorityBadge, StatusBadge } from '../ui/Badge';
 import { useDocuments } from '../../contexts/DocumentContext';
-import { teamMembers } from '../../data/sampleDocuments';
+import { getTeamMembers } from '../../utils/settings';
 import { formatDateTime, formatCurrency, classNames } from '../../utils/formatters';
 import { FileText, User, AlertTriangle, CheckCircle, Clock, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 
@@ -125,8 +125,8 @@ export function DocumentDetail({ isOpen, onClose }: DocumentDetailProps) {
               className={selectClass}
             >
               <option value="">Unassigned</option>
-              {teamMembers.filter(m => m.active).map(m => (
-                <option key={m.id} value={m.name}>{m.name}</option>
+              {getTeamMembers().map(name => (
+                <option key={name} value={name}>{name}</option>
               ))}
             </select>
           </div>

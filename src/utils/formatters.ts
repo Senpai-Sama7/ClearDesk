@@ -1,11 +1,6 @@
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import type { DocumentPriority, DocumentStatus } from '../types/document';
 
-export function formatDate(dateString: string | undefined): string {
-  if (!dateString) return '—';
-  try { return format(parseISO(dateString), 'MMM d, yyyy'); } catch { return dateString; }
-}
-
 export function formatDateTime(dateString: string | undefined): string {
   if (!dateString) return '—';
   try { return format(parseISO(dateString), 'MMM d, yyyy h:mm a'); } catch { return dateString; }
@@ -18,7 +13,8 @@ export function formatRelativeTime(dateString: string | undefined): string {
 
 export function formatCurrency(amount: number | undefined | null, currency: string = 'USD'): string {
   if (amount == null) return '—';
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+  try { return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount); }
+  catch { return `$${amount.toLocaleString()}`; }
 }
 
 export function formatFileSize(bytes: number): string {
@@ -29,26 +25,6 @@ export function formatFileSize(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-export function getStatusColor(status: DocumentStatus): string {
-  const m: Record<DocumentStatus, string> = {
-    pending: 'text-text-secondary',
-    processing: 'text-status-processing',
-    review: 'text-status-review',
-    completed: 'text-accent',
-    escalated: 'text-danger',
-  };
-  return m[status] || 'text-text-secondary';
-}
-
-export function getPriorityColor(priority: DocumentPriority): string {
-  const m: Record<DocumentPriority, string> = {
-    critical: 'text-danger',
-    high: 'text-priority-high',
-    medium: 'text-warning',
-    low: 'text-text-secondary',
-  };
-  return m[priority] || 'text-text-secondary';
-}
 
 export function getStatusLabel(status: DocumentStatus): string {
   const m: Record<DocumentStatus, string> = {

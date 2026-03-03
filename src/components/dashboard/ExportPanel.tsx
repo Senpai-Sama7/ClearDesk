@@ -11,10 +11,10 @@ interface ExportPanelProps {
 }
 
 export function ExportPanel({ isOpen, onClose }: ExportPanelProps) {
-  const { state } = useDocuments();
+  const { filteredDocuments } = useDocuments();
   const [copied, setCopied] = useState(false);
 
-  const docs = state.documents;
+  const docs = filteredDocuments;
   const completed = docs.filter(d => d.status === 'completed').length;
   const escalated = docs.filter(d => d.status === 'escalated').length;
   const pending = docs.filter(d => d.status === 'pending' || d.status === 'processing').length;
@@ -53,9 +53,10 @@ ${docs.map(d =>
   };
 
   const handleCSV = () => {
+    const esc = (v: unknown) => { const s = String(v ?? ''); return s.includes(',') || s.includes('"') ? `"${s.replace(/"/g, '""')}"` : s; };
     const header = 'Name,Status,Priority,Type,Customer,Amount,Invoice,Created\n';
     const rows = docs.map(d =>
-      [d.originalName, d.status, d.priority, d.type, d.extractedData?.customerName || '', d.extractedData?.amount || '', d.extractedData?.invoiceNumber || '', d.createdAt].join(',')
+      [d.originalName, d.status, d.priority, d.type, d.extractedData?.customerName || '', d.extractedData?.amount || '', d.extractedData?.invoiceNumber || '', d.createdAt].map(esc).join(',')
     ).join('\n');
     const blob = new Blob([header + rows], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);

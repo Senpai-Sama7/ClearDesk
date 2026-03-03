@@ -87,10 +87,11 @@ export function FileUpload({ onHandleFiles }: { onHandleFiles?: (handler: (files
   };
 
   const handleFiles = useCallback((fileList: File[]) => {
-    const valid: UploadingFile[] = fileList.filter(isValidDocumentFile)
+    const MAX_SIZE = 25 * 1024 * 1024; // 25MB
+    const valid: UploadingFile[] = fileList.filter(f => isValidDocumentFile(f) && f.size <= MAX_SIZE)
       .map(file => ({ id: generateId(), file, status: 'reading' as const }));
-    const invalid: UploadingFile[] = fileList.filter(f => !isValidDocumentFile(f))
-      .map(file => ({ id: generateId(), file, status: 'error' as const, error: 'Unsupported file type' }));
+    const invalid: UploadingFile[] = fileList.filter(f => !isValidDocumentFile(f) || f.size > MAX_SIZE)
+      .map(file => ({ id: generateId(), file, status: 'error' as const, error: file.size > MAX_SIZE ? 'File exceeds 25MB limit' : 'Unsupported file type' }));
 
     setFiles(p => [...p, ...valid, ...invalid]);
     valid.forEach(processFile);

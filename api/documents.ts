@@ -33,12 +33,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (r.status === 404) return res.json({ documents: [] });
       if (!r.ok) return res.status(502).json({ error: 'KV read failed' });
       const data = await r.text();
-      return res.json({ documents: JSON.parse(data) });
+      try { return res.json({ documents: JSON.parse(data) }); }
+      catch { return res.json({ documents: [] }); }
     }
 
     if (req.method === 'PUT') {
       const { documents } = req.body;
       if (!Array.isArray(documents)) return res.status(400).json({ error: 'documents must be an array' });
+      if (documents.length > 500) return res.status(400).json({ error: 'Too many documents' });
       const r = await fetch(kvUrl(key), { method: 'PUT', headers: headers(), body: JSON.stringify(documents) });
       if (!r.ok) return res.status(502).json({ error: 'KV write failed' });
       return res.json({ ok: true });

@@ -9,6 +9,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured on server' });
 
   try {
+    if (!req.body || typeof req.body !== 'object') return res.status(400).json({ error: 'Invalid request body' });
     const { content, filename, settings } = req.body;
     if (!content || !filename) return res.status(400).json({ error: 'content and filename required' });
 
@@ -81,19 +82,19 @@ Return ONLY JSON.`, cache_control: { type: 'ephemeral' } }],
     });
 
     if (!response.ok) {
-      const err = await response.text();
-      return res.status(response.status).json({ error: `Claude API error: ${err}` });
+      return res.status(response.status).json({ error: 'AI analysis service error' });
     }
 
     const data = await response.json();
     const text = data.content?.[0]?.text;
-    if (!text) return res.status(500).json({ error: 'Empty response from Claude' });
+    if (!text) return res.status(500).json({ error: 'Empty response from AI' });
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return res.status(500).json({ error: 'Could not parse Claude response' });
+    if (!jsonMatch) return res.status(500).json({ error: 'Could not parse AI response' });
 
-    return res.status(200).json(JSON.parse(jsonMatch[0]));
-  } catch (err) {
-    return res.status(500).json({ error: err instanceof Error ? err.message : 'Internal error' });
+    try { return res.status(200).json(JSON.parse(jsonMatch[0])); }
+    catch { return res.status(500).json({ error: 'Malformed AI response' }); }
+  } catch {
+    return res.status(500).json({ error: 'Internal error' });
   }
 }

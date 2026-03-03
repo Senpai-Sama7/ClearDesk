@@ -1,5 +1,3 @@
-import type { UploadProgress } from '../types/document';
-
 function readFileAs<T>(file: File, method: 'readAsText' | 'readAsDataURL' | 'readAsArrayBuffer'): Promise<T> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -9,9 +7,8 @@ function readFileAs<T>(file: File, method: 'readAsText' | 'readAsDataURL' | 'rea
   });
 }
 
-export const readFileAsText = (file: File) => readFileAs<string>(file, 'readAsText');
-export const readFileAsDataURL = (file: File) => readFileAs<string>(file, 'readAsDataURL');
-export const readFileAsArrayBuffer = (file: File) => readFileAs<ArrayBuffer>(file, 'readAsArrayBuffer');
+const readFileAsText = (file: File) => readFileAs<string>(file, 'readAsText');
+const readFileAsArrayBuffer = (file: File) => readFileAs<ArrayBuffer>(file, 'readAsArrayBuffer');
 
 // --- Format-specific extractors (all lazy-loaded) ---
 
@@ -139,23 +136,6 @@ export async function extractTextFromFile(file: File): Promise<string> {
   throw new Error(`Unsupported file format: ${file.name} (${type || 'unknown type'})`);
 }
 
-// --- Utilities ---
-
-export function getFileExtension(filename: string): string {
-  return filename.slice((filename.lastIndexOf('.') - 1 >>> 0) + 2).toLowerCase();
-}
-
-export function getFileIcon(filename: string): string {
-  const ext = getFileExtension(filename);
-  const map: Record<string, string> = {
-    pdf: 'pdf', doc: 'word', docx: 'word', txt: 'text',
-    csv: 'spreadsheet', xls: 'spreadsheet', xlsx: 'spreadsheet',
-    jpg: 'image', jpeg: 'image', png: 'image', gif: 'image',
-    webp: 'image', tif: 'image', tiff: 'image', eml: 'email',
-  };
-  return map[ext] || 'file';
-}
-
 export function isValidDocumentFile(file: File): boolean {
   const validTypes = [
     'application/pdf', 'text/plain', 'text/csv',
@@ -169,16 +149,4 @@ export function isValidDocumentFile(file: File): boolean {
   const validExts = ['.pdf', '.txt', '.csv', '.jpg', '.jpeg', '.png', '.gif', '.webp',
     '.tif', '.tiff', '.doc', '.docx', '.xls', '.xlsx', '.eml'];
   return validTypes.includes(file.type) || validExts.some(e => file.name.toLowerCase().endsWith(e));
-}
-
-export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-export function createUploadProgress(fileId: string, fileName: string): UploadProgress {
-  return { fileId, fileName, progress: 0, status: 'uploading' };
 }

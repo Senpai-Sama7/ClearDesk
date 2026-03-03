@@ -12,7 +12,8 @@ function loadDocuments(): Document[] {
 }
 
 function saveDocuments(docs: Document[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(docs));
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(docs)); }
+  catch { /* QuotaExceededError — localStorage full, skip persist */ }
 }
 
 interface DocumentState {
