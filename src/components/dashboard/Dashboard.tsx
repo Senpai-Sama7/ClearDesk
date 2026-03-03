@@ -8,6 +8,7 @@ import { ExportPanel } from './ExportPanel';
 import { FileUpload } from '../upload/FileUpload';
 import { SampleDocuments } from './SampleDocuments';
 import { SettingsPanel } from './SettingsPanel';
+import { HelpPanel } from './HelpPanel';
 import { ChatPanel } from './ChatPanel';
 import { useDocuments } from '../../contexts/DocumentContext';
 import { Button } from '../ui/Button';
@@ -39,6 +40,8 @@ export function Dashboard() {
     <Layout onNavigate={handleNavigate} activeView={activeView}>
       {activeView === 'settings' ? (
         <SettingsPanel />
+      ) : activeView === 'help' ? (
+        <HelpPanel />
       ) : (
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8">

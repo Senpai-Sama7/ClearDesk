@@ -1,4 +1,4 @@
-import { LayoutDashboard, FileText, Upload, Settings, Search, Menu, X } from 'lucide-react';
+import { LayoutDashboard, FileText, Upload, HelpCircle, Settings, Search, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { classNames } from '../../utils/formatters';
 import { useDocuments } from '../../contexts/DocumentContext';
@@ -13,6 +13,7 @@ const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'documents', label: 'Documents', icon: FileText },
   { id: 'upload', label: 'Upload', icon: Upload },
+  { id: 'help', label: 'Help', icon: HelpCircle },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
