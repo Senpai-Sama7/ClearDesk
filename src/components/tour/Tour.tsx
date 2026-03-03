@@ -54,7 +54,7 @@ export function Tour({ onComplete }: TourProps) {
   return (
     <>
       {/* Overlay */}
-      <div className="fixed inset-0 z-[10000]">
+      <div className="fixed inset-0 z-[10000] pointer-events-none">
         <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <mask id="tour-mask">
@@ -80,8 +80,11 @@ export function Tour({ onComplete }: TourProps) {
         />
       )}
 
+      {/* Click blocker — prevents interacting with app during tour */}
+      <div className="fixed inset-0 z-[10000]" />
+
       {/* Tooltip */}
-      <div style={tooltipStyle} className="bg-surface border border-border rounded-lg p-5 w-80 shadow-none" onClick={(e) => e.stopPropagation()}>
+      <div style={tooltipStyle} className="bg-surface border border-border rounded-lg p-5 w-80 shadow-none pointer-events-auto" onClick={(e) => e.stopPropagation()}>
         <p className="text-[11px] uppercase tracking-wider text-text-secondary mb-1">Step {step + 1} of {steps.length}</p>
         <h3 className="text-sm font-semibold text-text-primary mb-2 font-heading">{current.title}</h3>
         <p className="text-xs text-text-secondary leading-relaxed mb-4">{current.description}</p>
