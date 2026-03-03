@@ -1,7 +1,18 @@
-import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useMemo, useEffect } from 'react';
 import type { Document, DocumentFilters, DocumentStatus, DailySummary } from '../types/document';
-import { sampleDocuments } from '../data/sampleDocuments';
 import { generateId } from '../utils/formatters';
+const STORAGE_KEY = 'cleardesk_documents';
+
+function loadDocuments(): Document[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch { return []; }
+}
+
+function saveDocuments(docs: Document[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(docs));
+}
 
 interface DocumentState {
   documents: Document[];
@@ -24,28 +35,20 @@ type DocumentAction =
   | { type: 'BULK_UPDATE_STATUS'; payload: { ids: string[]; status: DocumentStatus } }
   | { type: 'BULK_ASSIGN'; payload: { ids: string[]; assignee: string } };
 
-const initialState: DocumentState = {
-  documents: sampleDocuments,
-  filters: {
-    status: 'all',
-    type: 'all',
-    priority: 'all',
-    assignee: 'all',
-    searchQuery: '',
-  },
-  selectedDocumentId: null,
-  isLoading: false,
-  error: null,
+const defaultFilters: DocumentFilters = {
+  status: 'all',
+  type: 'all',
+  priority: 'all',
+  assignee: 'all',
+  searchQuery: '',
 };
 
 function documentReducer(state: DocumentState, action: DocumentAction): DocumentState {
   switch (action.type) {
     case 'SET_DOCUMENTS':
       return { ...state, documents: action.payload };
-    
     case 'ADD_DOCUMENT':
       return { ...state, documents: [action.payload, ...state.documents] };
-    
     case 'UPDATE_DOCUMENT':
       return {
         ...state,
@@ -55,38 +58,22 @@ function documentReducer(state: DocumentState, action: DocumentAction): Document
             : doc
         ),
       };
-    
     case 'DELETE_DOCUMENT':
       return {
         ...state,
         documents: state.documents.filter((doc) => doc.id !== action.payload),
         selectedDocumentId: state.selectedDocumentId === action.payload ? null : state.selectedDocumentId,
       };
-    
     case 'SET_FILTERS':
       return { ...state, filters: { ...state.filters, ...action.payload } };
-    
     case 'CLEAR_FILTERS':
-      return {
-        ...state,
-        filters: {
-          status: 'all',
-          type: 'all',
-          priority: 'all',
-          assignee: 'all',
-          searchQuery: '',
-        },
-      };
-    
+      return { ...state, filters: defaultFilters };
     case 'SELECT_DOCUMENT':
       return { ...state, selectedDocumentId: action.payload };
-    
     case 'SET_LOADING':
       return { ...state, isLoading: action.payload };
-    
     case 'SET_ERROR':
       return { ...state, error: action.payload };
-    
     case 'BULK_UPDATE_STATUS':
       return {
         ...state,
@@ -96,7 +83,6 @@ function documentReducer(state: DocumentState, action: DocumentAction): Document
             : doc
         ),
       };
-    
     case 'BULK_ASSIGN':
       return {
         ...state,
@@ -106,7 +92,6 @@ function documentReducer(state: DocumentState, action: DocumentAction): Document
             : doc
         ),
       };
-    
     default:
       return state;
   }
@@ -117,7 +102,7 @@ interface DocumentContextType {
   filteredDocuments: Document[];
   selectedDocument: Document | null;
   dispatch: React.Dispatch<DocumentAction>;
-  addDocument: (document: Omit<Document, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  addDocument: (document: Omit<Document, 'id' | 'createdAt' | 'updatedAt'>) => string;
   updateDocument: (id: string, updates: Partial<Document>) => void;
   deleteDocument: (id: string) => void;
   setFilters: (filters: Partial<DocumentFilters>) => void;
@@ -131,33 +116,32 @@ interface DocumentContextType {
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
 
 export function DocumentProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(documentReducer, initialState);
+  const [state, dispatch] = useReducer(documentReducer, {
+    documents: loadDocuments(),
+    filters: defaultFilters,
+    selectedDocumentId: null,
+    isLoading: false,
+    error: null,
+  });
+
+  // Persist to localStorage on every document change
+  useEffect(() => {
+    saveDocuments(state.documents);
+  }, [state.documents]);
 
   const filteredDocuments = useMemo(() => {
     return state.documents.filter((doc) => {
       const { status, type, priority, assignee, searchQuery } = state.filters;
-      
       if (status && status !== 'all' && doc.status !== status) return false;
       if (type && type !== 'all' && doc.type !== type) return false;
       if (priority && priority !== 'all' && doc.priority !== priority) return false;
       if (assignee && assignee !== 'all' && doc.assignee !== assignee) return false;
-      
       if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const searchableText = [
-          doc.originalName,
-          doc.extractedData?.customerName,
-          doc.extractedData?.invoiceNumber,
-          doc.notes,
-          doc.assignee,
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
-        
-        if (!searchableText.includes(query)) return false;
+        const q = searchQuery.toLowerCase();
+        const text = [doc.originalName, doc.extractedData?.customerName, doc.extractedData?.invoiceNumber, doc.notes, doc.assignee]
+          .filter(Boolean).join(' ').toLowerCase();
+        if (!text.includes(q)) return false;
       }
-      
       return true;
     });
   }, [state.documents, state.filters]);
@@ -166,14 +150,16 @@ export function DocumentProvider({ children }: { children: React.ReactNode }) {
     return state.documents.find((doc) => doc.id === state.selectedDocumentId) || null;
   }, [state.documents, state.selectedDocumentId]);
 
-  const addDocument = useCallback((document: Omit<Document, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addDocument = useCallback((document: Omit<Document, 'id' | 'createdAt' | 'updatedAt'>): string => {
+    const id = generateId();
     const newDocument: Document = {
       ...document,
-      id: generateId(),
+      id,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
     dispatch({ type: 'ADD_DOCUMENT', payload: newDocument });
+    return id;
   }, []);
 
   const updateDocument = useCallback((id: string, updates: Partial<Document>) => {
@@ -209,54 +195,30 @@ export function DocumentProvider({ children }: { children: React.ReactNode }) {
     const dayStart = new Date(targetDate);
     const dayEnd = new Date(dayStart);
     dayEnd.setDate(dayEnd.getDate() + 1);
-
-    const dayDocuments = state.documents.filter((doc) => {
-      const docDate = new Date(doc.createdAt);
-      return docDate >= dayStart && docDate < dayEnd;
+    const dayDocs = state.documents.filter((doc) => {
+      const d = new Date(doc.createdAt);
+      return d >= dayStart && d < dayEnd;
     });
-
-    const byType = dayDocuments.reduce((acc, doc) => {
-      acc[doc.type] = (acc[doc.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const byAssignee = dayDocuments.reduce((acc, doc) => {
-      if (doc.assignee) {
-        acc[doc.assignee] = (acc[doc.assignee] || 0) + 1;
-      }
-      return acc;
-    }, {} as Record<string, number>);
-
+    const byType = dayDocs.reduce((a, d) => { a[d.type] = (a[d.type] || 0) + 1; return a; }, {} as Record<string, number>);
+    const byAssignee = dayDocs.reduce((a, d) => { if (d.assignee) a[d.assignee] = (a[d.assignee] || 0) + 1; return a; }, {} as Record<string, number>);
     return {
       date: targetDate,
-      totalDocuments: dayDocuments.length,
-      processedCount: dayDocuments.filter((d) => d.status === 'completed').length,
-      escalatedCount: dayDocuments.filter((d) => d.status === 'escalated').length,
-      pendingCount: dayDocuments.filter((d) => d.status === 'pending' || d.status === 'processing').length,
-      criticalCount: dayDocuments.filter((d) => d.priority === 'critical').length,
+      totalDocuments: dayDocs.length,
+      processedCount: dayDocs.filter((d) => d.status === 'completed').length,
+      escalatedCount: dayDocs.filter((d) => d.status === 'escalated').length,
+      pendingCount: dayDocs.filter((d) => d.status === 'pending' || d.status === 'processing').length,
+      criticalCount: dayDocs.filter((d) => d.priority === 'critical').length,
       byType,
       byAssignee,
     };
   }, [state.documents]);
 
-  const value: DocumentContextType = {
-    state,
-    filteredDocuments,
-    selectedDocument,
-    dispatch,
-    addDocument,
-    updateDocument,
-    deleteDocument,
-    setFilters,
-    clearFilters,
-    selectDocument,
-    bulkUpdateStatus,
-    bulkAssign,
-    getDailySummary,
-  };
-
   return (
-    <DocumentContext.Provider value={value}>
+    <DocumentContext.Provider value={{
+      state, filteredDocuments, selectedDocument, dispatch,
+      addDocument, updateDocument, deleteDocument, setFilters, clearFilters,
+      selectDocument, bulkUpdateStatus, bulkAssign, getDailySummary,
+    }}>
       {children}
     </DocumentContext.Provider>
   );
@@ -264,8 +226,6 @@ export function DocumentProvider({ children }: { children: React.ReactNode }) {
 
 export function useDocuments() {
   const context = useContext(DocumentContext);
-  if (context === undefined) {
-    throw new Error('useDocuments must be used within a DocumentProvider');
-  }
+  if (!context) throw new Error('useDocuments must be used within DocumentProvider');
   return context;
 }

@@ -1,238 +1,151 @@
 import { useCallback, useState, useRef } from 'react';
-import { Upload, File, X, AlertCircle, CheckCircle } from 'lucide-react';
-import { classNames, formatFileSize } from '../../utils/formatters';
+import { Upload, File, X, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { classNames, formatFileSize, generateId } from '../../utils/formatters';
 import { isValidDocumentFile, extractTextFromFile } from '../../utils/fileProcessing';
 import { claudeService } from '../../services/claudeService';
 import { useDocuments } from '../../contexts/DocumentContext';
-import { generateId } from '../../utils/formatters';
-import type { Document } from '../../types/document';
 
+const ANALYSIS_PHASES = [
+  'Extracting document structure…',
+  'Analyzing priority…',
+  'Generating summary…',
+] as const;
 
 interface UploadingFile {
   id: string;
   file: File;
-  status: 'pending' | 'uploading' | 'processing' | 'completed' | 'error';
-  progress: number;
+  status: 'reading' | 'analyzing' | 'done' | 'error';
+  statusText?: string;
   error?: string;
 }
 
 export function FileUpload() {
   const [isDragging, setIsDragging] = useState(false);
-  const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [files, setFiles] = useState<UploadingFile[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { addDocument, updateDocument } = useDocuments();
 
-  const handleDragEnter = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  }, []);
+  const setStatus = (id: string, status: UploadingFile['status'], extra?: Partial<UploadingFile>) =>
+    setFiles(p => p.map(f => f.id === id ? { ...f, status, ...extra } : f));
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
-
-  const processFile = async (uploadingFile: UploadingFile) => {
+  const processFile = async (uf: UploadingFile) => {
     try {
-      // Update status to uploading
-      setUploadingFiles(prev =>
-        prev.map(f => f.id === uploadingFile.id ? { ...f, status: 'uploading', progress: 30 } : f)
-      );
+      const isImage = uf.file.type.startsWith('image/') || /\.(png|jpe?g|tiff?)$/i.test(uf.file.name);
+      setStatus(uf.id, 'reading', { statusText: isImage ? 'Running OCR on image — this may take 20–30 seconds…' : 'Reading file contents…' });
+      const content = await extractTextFromFile(uf.file);
 
-      // Extract text content
-      const content = await extractTextFromFile(uploadingFile.file);
-      
-      setUploadingFiles(prev =>
-        prev.map(f => f.id === uploadingFile.id ? { ...f, status: 'processing', progress: 60 } : f)
-      );
-
-      // Create initial document
-      const newDocument: Omit<Document, 'id' | 'createdAt' | 'updatedAt'> = {
-        filename: uploadingFile.file.name,
-        originalName: uploadingFile.file.name,
-        type: 'other',
-        status: 'processing',
-        priority: 'medium',
-        fileContent: content,
-        isEscalated: false,
-        tags: [],
-      };
-
-      // Add document to state
-      const tempId = generateId();
-      addDocument(newDocument);
-
-      // Analyze with Claude
-      const analysis = await claudeService.analyzeDocument(content, uploadingFile.file.name);
-
-      // Update document with analysis results
-      updateDocument(tempId, {
-        type: analysis.documentType,
-        priority: analysis.priority,
-        status: analysis.requiresHumanReview ? 'review' : 'completed',
-        extractedData: analysis.extractedData,
-        escalationReasons: analysis.escalationReasons,
-        isEscalated: analysis.requiresHumanReview,
-        processedAt: new Date().toISOString(),
-      });
-
-      setUploadingFiles(prev =>
-        prev.map(f => f.id === uploadingFile.id ? { ...f, status: 'completed', progress: 100 } : f)
-      );
-
-    } catch (error) {
-      setUploadingFiles(prev =>
-        prev.map(f =>
-          f.id === uploadingFile.id
-            ? { ...f, status: 'error', error: error instanceof Error ? error.message : 'Upload failed' }
-            : f
-        )
-      );
-    }
-  };
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-
-    const files = Array.from(e.dataTransfer.files);
-    handleFiles(files);
-  }, []);
-
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    handleFiles(files);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  }, []);
-
-  const handleFiles = (files: File[]) => {
-    const newUploadingFiles: UploadingFile[] = files.map(file => ({
-      id: generateId(),
-      file,
-      status: 'pending',
-      progress: 0,
-    }));
-
-    setUploadingFiles(prev => [...prev, ...newUploadingFiles]);
-
-    // Process each file
-    newUploadingFiles.forEach(uploadingFile => {
-      if (!isValidDocumentFile(uploadingFile.file)) {
-        setUploadingFiles(prev =>
-          prev.map(f =>
-            f.id === uploadingFile.id
-              ? { ...f, status: 'error', error: 'Invalid file type' }
-              : f
-          )
-        );
+      if (!content.trim()) {
+        setStatus(uf.id, 'error', { error: `No readable text found in ${uf.file.name}. Try a text-based file.` });
         return;
       }
 
-      processFile(uploadingFile);
-    });
+      const docId = addDocument({
+        filename: uf.file.name, originalName: uf.file.name,
+        type: 'other', status: 'processing', priority: 'medium',
+        fileContent: content, isEscalated: false, tags: [],
+      });
+
+      // Cycle through analysis phases on a timer
+      setStatus(uf.id, 'analyzing', { statusText: ANALYSIS_PHASES[0] });
+      let phase = 0;
+      const phaseTimer = setInterval(() => {
+        phase = Math.min(phase + 1, ANALYSIS_PHASES.length - 1);
+        setStatus(uf.id, 'analyzing', { statusText: ANALYSIS_PHASES[phase] });
+      }, 2500);
+
+      try {
+        const analysis = await claudeService.analyzeDocument(content, uf.file.name);
+        clearInterval(phaseTimer);
+        updateDocument(docId, {
+          type: analysis.documentType, priority: analysis.priority,
+          status: analysis.requiresHumanReview ? 'escalated' : 'completed',
+          extractedData: analysis.extractedData,
+          actionDeadline: analysis.actionDeadline,
+          escalationReasons: analysis.escalationReasons,
+          isEscalated: analysis.requiresHumanReview,
+          processedAt: new Date().toISOString(),
+          notes: analysis.summary,
+        });
+        setStatus(uf.id, 'done', { statusText: 'Complete' });
+      } catch (err) {
+        clearInterval(phaseTimer);
+        const msg = err instanceof Error ? err.message : 'Unknown error';
+        const specific = msg.includes('API key') ? 'Server missing ANTHROPIC_API_KEY — contact admin.'
+          : msg.includes('401') ? 'Invalid API key configured on server.'
+          : msg.includes('429') ? 'Rate limited by Claude API — wait a moment and retry.'
+          : msg.includes('500') ? 'Claude API returned a server error — retry shortly.'
+          : msg.includes('Failed to fetch') || msg.includes('NetworkError') ? 'Network error — check your connection.'
+          : `AI analysis failed: ${msg}`;
+        updateDocument(docId, { status: 'pending', notes: `${specific} Document saved — retry later.` });
+        setStatus(uf.id, 'error', { error: specific });
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Failed to read file';
+      setStatus(uf.id, 'error', { error: msg });
+    }
   };
 
-  const removeFile = (id: string) => {
-    setUploadingFiles(prev => prev.filter(f => f.id !== id));
-  };
+  const handleFiles = useCallback((fileList: File[]) => {
+    const valid: UploadingFile[] = fileList.filter(isValidDocumentFile)
+      .map(file => ({ id: generateId(), file, status: 'reading' as const }));
+    const invalid: UploadingFile[] = fileList.filter(f => !isValidDocumentFile(f))
+      .map(file => ({ id: generateId(), file, status: 'error' as const, error: 'Unsupported file type' }));
+
+    setFiles(p => [...p, ...valid, ...invalid]);
+    valid.forEach(processFile);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFiles(Array.from(e.dataTransfer.files));
+  }, [handleFiles]);
 
   return (
-    <div className="space-y-4">
-      {/* Drop Zone */}
+    <div className="space-y-4" data-tour="upload">
       <div
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
+        onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+        onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => inputRef.current?.click()}
         className={classNames(
-          'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors',
-          isDragging
-            ? 'border-blue-500 bg-blue-50'
-            : 'border-gray-300 hover:border-gray-400 bg-gray-50'
+          'border border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors',
+          isDragging ? 'border-accent bg-accent/5' : 'border-border hover:border-border-hover'
         )}
       >
         <input
-          ref={fileInputRef}
+          ref={inputRef}
           type="file"
           multiple
-          accept=".pdf,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx"
-          onChange={handleFileSelect}
+          accept=".pdf,.txt,.csv,.jpg,.jpeg,.png,.tif,.tiff,.doc,.docx,.xls,.xlsx,.eml"
+          onChange={(e) => { handleFiles(Array.from(e.target.files || [])); if (inputRef.current) inputRef.current.value = ''; }}
           className="hidden"
         />
-        <Upload className={classNames(
-          'w-12 h-12 mx-auto mb-4',
-          isDragging ? 'text-blue-500' : 'text-gray-400'
-        )} />
-        <p className="text-lg font-medium text-gray-700 mb-2">
-          Drop files here or click to upload
-        </p>
-        <p className="text-sm text-gray-500">
-          Supports PDF, TXT, CSV, images (JPG, PNG), and Word documents
-        </p>
+        <Upload className={classNames('w-8 h-8 mx-auto mb-3', isDragging ? 'text-accent' : 'text-text-secondary')} />
+        <p className="text-sm text-text-primary mb-1">Drop files here or click to browse</p>
+        <p className="text-xs text-text-secondary">PDF, Word, Excel, images (OCR), email (.eml), TXT, CSV</p>
       </div>
 
-      {/* Upload Progress */}
-      {uploadingFiles.length > 0 && (
-        <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-200">
-          {uploadingFiles.map((uploadingFile) => (
-            <div key={uploadingFile.id} className="p-4 flex items-center space-x-4">
-              <div className="flex-shrink-0">
-                {uploadingFile.status === 'completed' ? (
-                  <CheckCircle className="w-8 h-8 text-green-500" />
-                ) : uploadingFile.status === 'error' ? (
-                  <AlertCircle className="w-8 h-8 text-red-500" />
-                ) : (
-                  <File className="w-8 h-8 text-blue-500" />
-                )}
-              </div>
-              
+      {files.length > 0 && (
+        <div className="space-y-2">
+          {files.map((f) => (
+            <div key={f.id} className="flex items-center gap-3 bg-surface border border-border rounded-lg px-4 py-3">
+              {f.status === 'done' ? <CheckCircle className="w-4 h-4 text-accent flex-shrink-0" /> :
+               f.status === 'error' ? <AlertCircle className="w-4 h-4 text-danger flex-shrink-0" /> :
+               f.status === 'analyzing' ? <Loader2 className="w-4 h-4 text-status-processing animate-spin flex-shrink-0" /> :
+               <File className="w-4 h-4 text-text-secondary flex-shrink-0" />}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {uploadingFile.file.name}
+                <p className="text-sm text-text-primary truncate">{f.file.name}</p>
+                <p className={classNames('text-[11px]', f.status === 'error' ? 'text-danger' : 'text-text-secondary')}>
+                  {formatFileSize(f.file.size)}
+                  {(f.status === 'analyzing' || f.status === 'reading') && ` · ${f.statusText || 'Processing…'}`}
+                  {f.status === 'error' && ` · ${f.error}`}
+                  {f.status === 'done' && ' · ✓ Processed'}
                 </p>
-                <p className="text-xs text-gray-500">
-                  {formatFileSize(uploadingFile.file.size)}
-                </p>
-                
-                {/* Progress Bar */}
-                {uploadingFile.status !== 'completed' && uploadingFile.status !== 'error' && (
-                  <div className="mt-2">
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={classNames(
-                          'h-full transition-all duration-300',
-                          uploadingFile.status === 'processing' ? 'bg-purple-500' : 'bg-blue-500'
-                        )}
-                        style={{ width: `${uploadingFile.progress}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {uploadingFile.status === 'processing' ? 'AI analyzing document...' : 'Uploading...'}
-                    </p>
-                  </div>
-                )}
-                
-                {uploadingFile.error && (
-                  <p className="text-xs text-red-600 mt-1">{uploadingFile.error}</p>
-                )}
               </div>
-
-              <button
-                onClick={() => removeFile(uploadingFile.id)}
-                className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-5 h-5" />
+              <button onClick={() => setFiles(p => p.filter(x => x.id !== f.id))} className="text-text-secondary hover:text-text-primary flex-shrink-0">
+                <X className="w-4 h-4" />
               </button>
             </div>
           ))}

@@ -18,6 +18,7 @@ export interface ExtractedData {
 
 export interface EscalationReason {
   type: 'low_confidence' | 'missing_data' | 'ambiguous' | 'high_value' | 'manual_review';
+  severity?: 'blocking' | 'warning' | 'informational';
   description: string;
   field?: string;
 }
@@ -32,6 +33,7 @@ export interface Document {
   fileUrl?: string;
   fileContent?: string;
   extractedData?: ExtractedData;
+  actionDeadline?: string | null;
   escalationReasons?: EscalationReason[];
   isEscalated: boolean;
   assignee?: string;
@@ -70,6 +72,7 @@ export interface ClaudeAnalysisResponse {
   documentType: DocumentType;
   priority: DocumentPriority;
   extractedData: ExtractedData;
+  actionDeadline: string | null;
   escalationReasons: EscalationReason[];
   requiresHumanReview: boolean;
   confidence: number;

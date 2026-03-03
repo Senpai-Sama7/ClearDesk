@@ -6,129 +6,89 @@ import { DocumentCard } from './DocumentCard';
 import { DocumentDetail } from './DocumentDetail';
 import { ExportPanel } from './ExportPanel';
 import { FileUpload } from '../upload/FileUpload';
+import { SettingsPanel } from './SettingsPanel';
+import { Tour } from '../tour/Tour';
 import { useDocuments } from '../../contexts/DocumentContext';
 import { Button } from '../ui/Button';
-import { Plus, Grid, List } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 
 export function Dashboard() {
-  const { filteredDocuments, selectDocument, selectedDocument } = useDocuments();
+  const { filteredDocuments, selectDocument } = useDocuments();
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [activeView, setActiveView] = useState('dashboard');
   const [showUpload, setShowUpload] = useState(false);
+  const [tourActive, setTourActive] = useState(() => !localStorage.getItem('cleardesk_tour_completed'));
 
   const handleCardClick = (id: string) => {
     selectDocument(id);
     setIsDetailOpen(true);
   };
 
+  const handleNavigate = (view: string) => {
+    setActiveView(view);
+    if (view === 'upload') setShowUpload(true);
+    else setShowUpload(false);
+  };
+
   return (
-    <Layout>
-      <div className="max-w-7xl mx-auto">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Document Dashboard</h1>
-            <p className="text-gray-500 mt-1">
-              Manage and process AR documents with AI assistance
-            </p>
-          </div>
-          <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-            <Button
-              variant="primary"
-              onClick={() => setShowUpload(!showUpload)}
-              leftIcon={<Plus className="w-4 h-4" />}
-            >
-              Upload Document
+    <Layout onNavigate={handleNavigate} activeView={activeView}>
+      {activeView === 'settings' ? (
+        <SettingsPanel onStartTour={() => setTourActive(true)} />
+      ) : (
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="font-heading text-2xl font-bold text-text-primary">Documents</h1>
+              <p className="text-sm text-text-secondary mt-1">
+                {filteredDocuments.length} document{filteredDocuments.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+            <Button data-tour="upload-btn" variant="primary" size="md" onClick={() => setShowUpload(!showUpload)} leftIcon={<Plus className="w-4 h-4" />}>
+              Upload
             </Button>
           </div>
-        </div>
 
-        {/* Stats Overview */}
-        <StatsOverview />
+          <StatsOverview />
 
-        {/* Upload Section */}
-        {showUpload && (
-          <div className="mb-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          {showUpload && (
+            <div className="mb-8 bg-surface border border-border rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Upload Documents</h2>
-                <button
-                  onClick={() => setShowUpload(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ×
-                </button>
+                <h2 className="text-sm font-medium text-text-primary">Upload Documents</h2>
+                <button onClick={() => setShowUpload(false)} className="text-text-secondary hover:text-text-primary text-sm">Close</button>
               </div>
               <FileUpload />
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Filters */}
-        <FilterPanel onExport={() => setIsExportOpen(true)} />
+          <FilterPanel onExport={() => setIsExportOpen(true)} />
 
-        {/* View Toggle & Results Count */}
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-sm text-gray-500">
-            Showing {filteredDocuments.length} document{filteredDocuments.length !== 1 ? 's' : ''}
-          </p>
-          <div className="flex items-center space-x-2 bg-white rounded-lg border border-gray-200 p-1">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded ${viewMode === 'grid' ? 'bg-gray-100 text-gray-900' : 'text-gray-400'}`}
-            >
-              <Grid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded ${viewMode === 'list' ? 'bg-gray-100 text-gray-900' : 'text-gray-400'}`}
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
+          {filteredDocuments.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredDocuments.map((doc, i) => (
+                <DocumentCard
+                  key={doc.id}
+                  document={doc}
+                  onClick={() => handleCardClick(doc.id)}
+                  style={{ animationDelay: `${i * 60}ms` }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Upload className="w-8 h-8 text-text-secondary mb-4" />
+              <p className="text-text-secondary text-sm">No documents yet</p>
+              <Button variant="secondary" size="sm" className="mt-4" onClick={() => setShowUpload(true)}>
+                Upload your first document
+              </Button>
+            </div>
+          )}
         </div>
+      )}
 
-        {/* Document Grid */}
-        {filteredDocuments.length > 0 ? (
-          <div className={`grid gap-4 ${
-            viewMode === 'grid' 
-              ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-              : 'grid-cols-1'
-          }`}>
-            {filteredDocuments.map((doc) => (
-              <DocumentCard
-                key={doc.id}
-                document={doc}
-                onClick={() => handleCardClick(doc.id)}
-                isSelected={selectedDocument?.id === doc.id}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-            <p className="text-gray-500 text-lg">No documents found</p>
-            <p className="text-gray-400 text-sm mt-1">
-              Try adjusting your filters or upload a new document
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Document Detail Modal */}
-      <DocumentDetail
-        isOpen={isDetailOpen}
-        onClose={() => {
-          setIsDetailOpen(false);
-          selectDocument(null);
-        }}
-      />
-
-      {/* Export Panel Modal */}
-      <ExportPanel
-        isOpen={isExportOpen}
-        onClose={() => setIsExportOpen(false)}
-      />
+      <DocumentDetail isOpen={isDetailOpen} onClose={() => { setIsDetailOpen(false); selectDocument(null); }} />
+      <ExportPanel isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} />
+      {tourActive && <Tour onComplete={() => { setTourActive(false); localStorage.setItem('cleardesk_tour_completed', '1'); }} />}
     </Layout>
   );
 }
