@@ -15,7 +15,6 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
 
   const handleEnter = () => {
     setExiting(true);
-    localStorage.setItem('cleardesk_visited', '1');
     setTimeout(onEnter, 500);
   };
 
