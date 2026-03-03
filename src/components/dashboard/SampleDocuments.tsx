@@ -6,7 +6,6 @@ import mammoth from 'mammoth';
 const formats = ['All', 'PDF', 'DOCX', 'CSV', 'JSON', 'TXT'] as const;
 
 const samples = [
-  { name: 'Swift Haul Invoice', file: 'Swift Haul Invoice.pdf', fmt: 'PDF', mime: 'application/pdf', desc: 'Freight invoice — $12,450 net-30' },
   { name: 'Swift Haul Invoice', file: 'Swift Haul Invoice.docx', fmt: 'DOCX', mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', desc: 'Freight invoice — Word' },
   { name: 'Invoice (Swift Haul → Lone Star)', file: 'Invoice_SwiftHaul_LoneStarDist.csv', fmt: 'CSV', mime: 'text/csv', desc: 'Freight invoice — CSV' },
   { name: 'Invoice (Swift Haul → Lone Star)', file: 'Invoice_SwiftHaul_LoneStarDist.json', fmt: 'JSON', mime: 'application/json', desc: 'Freight invoice — JSON' },
@@ -71,7 +70,7 @@ export function SampleDocuments({ onProcessFile }: Props) {
         <Button variant="secondary" size="sm" onClick={() => setOpen(true)} leftIcon={<FolderOpen className="w-3.5 h-3.5" />}>
           Try a sample document
         </Button>
-        <p className="text-[11px] text-text-secondary mt-1.5">15 samples across 5 formats — no upload needed</p>
+        <p className="text-[11px] text-text-secondary mt-1.5">14 samples across 5 formats — no upload needed</p>
       </div>
     );
   }
@@ -79,7 +78,7 @@ export function SampleDocuments({ onProcessFile }: Props) {
   return (
     <div className="mt-4 pt-4 border-t border-border space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-xs text-text-secondary">15 samples across 5 formats — click Process to analyze directly.</p>
+        <p className="text-xs text-text-secondary">14 samples across 5 formats — click Process to analyze directly.</p>
         <button onClick={() => { setOpen(false); setPreview(null); setPreviewContent(null); }} aria-label="Close sample documents" className="text-text-secondary hover:text-text-primary">
           <X className="w-4 h-4" />
         </button>
