@@ -80,7 +80,7 @@ export function SampleDocuments({ onProcessFile }: Props) {
     <div className="mt-4 pt-4 border-t border-border space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-xs text-text-secondary">15 samples across 5 formats — click Process to analyze directly.</p>
-        <button onClick={() => { setOpen(false); setPreview(null); setPreviewContent(null); }} className="text-text-secondary hover:text-text-primary">
+        <button onClick={() => { setOpen(false); setPreview(null); setPreviewContent(null); }} aria-label="Close sample documents" className="text-text-secondary hover:text-text-primary">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -88,7 +88,7 @@ export function SampleDocuments({ onProcessFile }: Props) {
       <div className="flex gap-1 flex-wrap">
         {formats.map(f => (
           <button key={f} onClick={() => setFmt(f)}
-            className={`px-2.5 py-1 rounded text-[11px] transition-colors ${fmt === f ? 'bg-accent/15 text-accent-text' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`}>
+            className={`px-2.5 py-1 rounded text-[11px] transition-colors ${fmt === f ? 'bg-accent/20 text-text-primary font-medium' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`}>
             {f}
           </button>
         ))}
@@ -105,11 +105,11 @@ export function SampleDocuments({ onProcessFile }: Props) {
                 <p className="text-[11px] text-text-secondary">{s.desc} · <span className="font-mono">{s.fmt}</span></p>
               </div>
               <div className="flex gap-1.5 flex-shrink-0">
-                <button onClick={() => openPreview(s)}
+                <button onClick={() => openPreview(s)} aria-label={`Preview ${s.name} ${s.fmt}`}
                     className={`p-1.5 rounded transition-colors ${preview === s.file ? 'text-accent bg-accent/10' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`} title="Preview">
                   <Eye className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => downloadFile(s)}
+                <button onClick={() => downloadFile(s)} aria-label={`Download ${s.name} ${s.fmt}`}
                     className="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-surface transition-colors" title="Download">
                   <Download className="w-3.5 h-3.5" />
                 </button>
@@ -127,7 +127,7 @@ export function SampleDocuments({ onProcessFile }: Props) {
           <div className="w-1/2 border border-border rounded-lg overflow-hidden bg-bg flex flex-col max-h-[28rem]">
             <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-surface">
               <p className="text-xs text-text-primary truncate font-medium">{preview}</p>
-              <button onClick={() => { setPreview(null); setPreviewContent(null); }} className="text-text-secondary hover:text-text-primary">
+              <button onClick={() => { setPreview(null); setPreviewContent(null); }} aria-label="Close preview" className="text-text-secondary hover:text-text-primary">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
