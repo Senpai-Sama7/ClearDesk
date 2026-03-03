@@ -21,9 +21,9 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-transform duration-500 ease-in-out"
+      className="fixed inset-0 z-[99999] flex flex-col items-center justify-center transition-transform duration-500 ease-in-out"
       style={{
-        backgroundColor: visible ? 'var(--color-bg)' : '#000000',
+        background: visible ? '#0A0A0F' : '#000000',
         transform: exiting ? 'translateY(-100%)' : 'translateY(0)',
       }}
     >
