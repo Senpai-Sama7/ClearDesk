@@ -35,7 +35,7 @@ export function SampleDocuments({ onProcessFile }: Props) {
   const processNow = async (s: typeof samples[0]) => {
     setLoading(s.file);
     try {
-      const r = await fetch(`/samples/${s.file}`);
+      const r = await fetch(`/samples/${encodeURIComponent(s.file)}`);
       const blob = await r.blob();
       onProcessFile(new File([blob], s.file, { type: s.mime }));
       setOpen(false);
@@ -100,7 +100,7 @@ export function SampleDocuments({ onProcessFile }: Props) {
 
       {preview && (
         <div className="border border-border rounded-lg overflow-hidden bg-bg">
-          <iframe src={`/samples/${preview}`} className="w-full h-96" title="Sample preview" />
+          <iframe src={`/samples/${encodeURIComponent(preview)}`} className="w-full h-96" title="Sample preview" />
         </div>
       )}
     </div>
