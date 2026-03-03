@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { FileText, Play, Eye, X } from 'lucide-react';
+import { FileText, Play, Eye, Download, X } from 'lucide-react';
 import { Button } from '../ui/Button';
+import mammoth from 'mammoth';
 
 const formats = ['All', 'PDF', 'DOCX', 'CSV', 'JSON', 'TXT'] as const;
 
@@ -44,7 +45,12 @@ export function SampleDocuments({ onProcessFile }: Props) {
     } finally { setLoading(null); }
   };
 
-  const canPreview = (f: string) => f.endsWith('.pdf') || f.endsWith('.txt') || f.endsWith('.json') || f.endsWith('.csv');
+  const downloadFile = (s: typeof samples[0]) => {
+    const a = document.createElement('a');
+    a.href = `/samples/${encodeURIComponent(s.file)}`;
+    a.download = s.file;
+    a.click();
+  };
 
   if (!open) {
     return (
@@ -84,21 +90,28 @@ export function SampleDocuments({ onProcessFile }: Props) {
               <p className="text-[11px] text-text-secondary">{s.desc} · <span className="font-mono">{s.fmt}</span></p>
             </div>
             <div className="flex gap-1.5 flex-shrink-0">
-              {canPreview(s.file) && (
-                <button onClick={async () => {
+              <button onClick={async () => {
                     if (preview === s.file) { setPreview(null); setPreviewContent(null); }
                     else {
                       setPreview(s.file);
-                      if (!s.file.endsWith('.pdf')) {
+                      if (s.file.endsWith('.docx')) {
+                        const r = await fetch(`/samples/${encodeURIComponent(s.file)}`);
+                        const buf = await r.arrayBuffer();
+                        const { value } = await mammoth.convertToHtml({ arrayBuffer: buf });
+                        setPreviewContent(value);
+                      } else if (!s.file.endsWith('.pdf')) {
                         const r = await fetch(`/samples/${encodeURIComponent(s.file)}`);
                         setPreviewContent(await r.text());
                       } else { setPreviewContent(null); }
                     }
                   }}
                   className="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-surface transition-colors" title="Preview">
-                  <Eye className="w-3.5 h-3.5" />
-                </button>
-              )}
+                <Eye className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => downloadFile(s)}
+                  className="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-surface transition-colors" title="Download">
+                <Download className="w-3.5 h-3.5" />
+              </button>
               <Button variant="primary" size="sm" onClick={() => processNow(s)} disabled={loading === s.file}
                 leftIcon={<Play className="w-3 h-3" />}>
                 {loading === s.file ? 'Loading…' : 'Process'}
@@ -112,6 +125,8 @@ export function SampleDocuments({ onProcessFile }: Props) {
         <div className="border border-border rounded-lg overflow-hidden bg-bg">
           {preview.endsWith('.pdf') ? (
             <iframe src={`/samples/${encodeURIComponent(preview)}`} className="w-full h-96" title="Sample preview" />
+          ) : preview.endsWith('.docx') ? (
+            <div className="p-4 text-sm text-text-primary overflow-auto max-h-96 prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: previewContent ?? '<p>Loading…</p>' }} />
           ) : (
             <pre className="p-4 text-xs text-text-primary font-mono whitespace-pre-wrap overflow-auto max-h-96">{previewContent ?? 'Loading…'}</pre>
           )}
