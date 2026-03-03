@@ -27,6 +27,7 @@ interface Props { onProcessFile: (file: File) => void; }
 export function SampleDocuments({ onProcessFile }: Props) {
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [previewContent, setPreviewContent] = useState<string | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [fmt, setFmt] = useState<string>('All');
 
@@ -84,7 +85,16 @@ export function SampleDocuments({ onProcessFile }: Props) {
             </div>
             <div className="flex gap-1.5 flex-shrink-0">
               {canPreview(s.file) && (
-                <button onClick={() => setPreview(preview === s.file ? null : s.file)}
+                <button onClick={async () => {
+                    if (preview === s.file) { setPreview(null); setPreviewContent(null); }
+                    else {
+                      setPreview(s.file);
+                      if (!s.file.endsWith('.pdf')) {
+                        const r = await fetch(`/samples/${encodeURIComponent(s.file)}`);
+                        setPreviewContent(await r.text());
+                      } else { setPreviewContent(null); }
+                    }
+                  }}
                   className="p-1.5 rounded text-text-secondary hover:text-text-primary hover:bg-surface transition-colors" title="Preview">
                   <Eye className="w-3.5 h-3.5" />
                 </button>
@@ -100,7 +110,11 @@ export function SampleDocuments({ onProcessFile }: Props) {
 
       {preview && (
         <div className="border border-border rounded-lg overflow-hidden bg-bg">
-          <iframe src={`/samples/${encodeURIComponent(preview)}`} className="w-full h-96" title="Sample preview" />
+          {preview.endsWith('.pdf') ? (
+            <iframe src={`/samples/${encodeURIComponent(preview)}`} className="w-full h-96" title="Sample preview" />
+          ) : (
+            <pre className="p-4 text-xs text-text-primary font-mono whitespace-pre-wrap overflow-auto max-h-96">{previewContent ?? 'Loading…'}</pre>
+          )}
         </div>
       )}
     </div>
