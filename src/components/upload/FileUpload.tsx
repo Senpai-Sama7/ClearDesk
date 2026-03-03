@@ -65,6 +65,7 @@ export function FileUpload({ onHandleFiles }: { onHandleFiles?: (handler: (files
           isEscalated: analysis.requiresHumanReview,
           processedAt: new Date().toISOString(),
           notes: analysis.summary,
+          summaryEs: analysis.summary_es,
         });
         setStatus(uf.id, 'done', { statusText: 'Complete' });
       } catch (err) {

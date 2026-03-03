@@ -60,7 +60,8 @@ Analyze the provided document and return ONLY a JSON response:
   "escalationReasons": [{ "type": "low_confidence"|"missing_data"|"ambiguous"|"high_value"|"manual_review", "severity": "blocking"|"warning"|"informational", "description": string, "field": string? }],
   "requiresHumanReview": boolean,
   "confidence": number (0-1),
-  "summary": string
+  "summary": string,
+  "summary_es": string
 }
 PRIORITY THRESHOLDS:
 - Critical: >$${t.critical.toLocaleString()} or disputes
@@ -73,6 +74,7 @@ OTHER RULES:
 - actionDeadline: the single most important date — due date, response deadline, or dispute window. null if none found.
 - escalationReasons severity: "blocking" = cannot proceed without human, "warning" = should review but can proceed, "informational" = FYI only.
 - summary: exactly 3 sentences max. Sentence 1: what this document IS and who it involves. Sentence 2: what ACTION is required and by when. Sentence 3 (only if escalation): why this needs human attention. Write in plain, clear English for someone whose first language is not English. Never exceed 3 sentences.
+- summary_es: the SAME summary translated to professional Latin American Spanish. Same 3-sentence structure. Preserve all names, amounts, dates, and invoice numbers exactly as-is — only translate the surrounding language.
 Return ONLY JSON.`, cache_control: { type: 'ephemeral' } }],
         messages: [{ role: 'user', content: `Analyze this document:\n\nFilename: ${filename}${truncated ? '\n\n[NOTE: Document truncated to first 50,000 characters]' : ''}\n\nContent:\n${safeContent}` }],
       }),

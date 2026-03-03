@@ -41,6 +41,7 @@ export interface Document {
   updatedAt: string;
   processedAt?: string;
   notes?: string;
+  summaryEs?: string;
   tags: string[];
 }
 
@@ -77,6 +78,7 @@ export interface ClaudeAnalysisResponse {
   requiresHumanReview: boolean;
   confidence: number;
   summary: string;
+  summary_es?: string;
 }
 
 export interface UploadProgress {

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { PriorityBadge, StatusBadge } from '../ui/Badge';
@@ -13,6 +14,8 @@ interface DocumentDetailProps {
 
 export function DocumentDetail({ isOpen, onClose }: DocumentDetailProps) {
   const { selectedDocument, updateDocument, deleteDocument, selectDocument, filteredDocuments } = useDocuments();
+
+  const [lang, setLang] = useState<'en' | 'es'>('en');
 
   if (!selectedDocument) return null;
 
@@ -79,11 +82,21 @@ export function DocumentDetail({ isOpen, onClose }: DocumentDetailProps) {
             </div>
           ) : null}
 
-          {/* Notes */}
+          {/* Summary */}
           {selectedDocument.notes && (
             <div>
-              <p className="text-xs uppercase tracking-wider text-text-secondary mb-2">Notes</p>
-              <p className="text-sm text-text-secondary bg-surface rounded-lg p-3 border border-border">{selectedDocument.notes}</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs uppercase tracking-wider text-text-secondary">Summary</p>
+                {selectedDocument.summaryEs && (
+                  <div className="flex rounded-md border border-border overflow-hidden text-xs">
+                    <button onClick={() => setLang('en')} className={classNames('px-2.5 py-1 transition-colors', lang === 'en' ? 'bg-accent/15 text-accent' : 'text-text-secondary hover:text-text-primary')}>EN</button>
+                    <button onClick={() => setLang('es')} className={classNames('px-2.5 py-1 transition-colors border-l border-border', lang === 'es' ? 'bg-accent/15 text-accent' : 'text-text-secondary hover:text-text-primary')}>ES</button>
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-text-secondary bg-surface rounded-lg p-3 border border-border">
+                {lang === 'es' && selectedDocument.summaryEs ? selectedDocument.summaryEs : selectedDocument.notes}
+              </p>
             </div>
           )}
 
