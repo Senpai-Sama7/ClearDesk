@@ -37,9 +37,8 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
 
       {/* Headline */}
       <h1
-        className="font-heading text-4xl md:text-5xl font-bold text-center transition-all duration-700 delay-150 bg-clip-text text-transparent bg-[length:200%_100%] animate-[shimmer_4s_ease-in-out_infinite]"
+        className="font-heading text-4xl md:text-5xl font-bold text-center transition-transform duration-700 delay-150 bg-clip-text text-transparent bg-[length:200%_100%] animate-[shimmer_4s_ease-in-out_infinite]"
         style={{
-          opacity: visible ? 1 : 0,
           transform: visible ? 'translateY(0)' : 'translateY(16px)',
           backgroundImage: 'linear-gradient(90deg, var(--color-text-primary) 0%, var(--color-accent) 25%, var(--color-accent-text) 50%, var(--color-accent) 75%, var(--color-text-primary) 100%)',
         }}
@@ -47,10 +46,10 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
         Accounts Receivable Intelligence.
       </h1>
 
-      {/* Subheading */}
+      {/* Subheading — no opacity animation, it's the LCP element */}
       <p
-        className="mt-5 text-base text-[#A8A8B8] text-center max-w-[480px] leading-relaxed transition-all duration-700 delay-300"
-        style={{ opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(16px)' }}
+        className="mt-5 text-base text-[#A8A8B8] text-center max-w-[480px] leading-relaxed transition-transform duration-700 delay-300"
+        style={{ transform: visible ? 'translateY(0)' : 'translateY(16px)' }}
       >
         Upload any AR document. Claude AI extracts, prioritizes, and flags what your team needs to act on.
       </p>
