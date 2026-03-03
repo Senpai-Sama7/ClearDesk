@@ -1,15 +1,23 @@
 import { useState } from 'react';
 import { useDocuments } from '../../contexts/DocumentContext';
 import { Button } from '../ui/Button';
-import { Trash2, RotateCcw, X } from 'lucide-react';
+import { Trash2, RotateCcw, X, Sun, Moon, Monitor } from 'lucide-react';
 import { classNames } from '../../utils/formatters';
 import { getThresholds, getEscalationRules, getTeamMembers, saveThresholds, saveEscalationRules, saveTeamMembers } from '../../utils/settings';
 import type { Thresholds, EscalationRules } from '../../utils/settings';
+import { useTheme } from '../../hooks/useTheme';
 
 interface SettingsPanelProps { onStartTour: () => void; }
 
+const themeOptions = [
+  { value: 'system' as const, icon: Monitor, label: 'System' },
+  { value: 'light' as const, icon: Sun, label: 'Light' },
+  { value: 'dark' as const, icon: Moon, label: 'Dark' },
+];
+
 export function SettingsPanel({ onStartTour }: SettingsPanelProps) {
   const { state, dispatch } = useDocuments();
+  const { theme, setTheme } = useTheme();
   const [thresholds, setThresholds] = useState(getThresholds);
   const [rules, setRules] = useState(getEscalationRules);
   const [team, setTeam] = useState(getTeamMembers);
@@ -52,6 +60,20 @@ export function SettingsPanel({ onStartTour }: SettingsPanelProps) {
         <h1 className="font-heading text-2xl font-bold text-text-primary">Settings</h1>
         <p className="text-sm text-text-secondary mt-1">Manage data, preferences, and processing rules</p>
       </div>
+
+      <Section title="Appearance">
+        <div className="flex gap-2">
+          {themeOptions.map(({ value, icon: Icon, label }) => (
+            <button key={value} onClick={() => setTheme(value)}
+              className={classNames(
+                'flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors',
+                theme === value ? 'bg-accent/10 text-accent border border-accent/30' : 'bg-bg border border-border text-text-secondary hover:border-border-hover'
+              )}>
+              <Icon className="w-3.5 h-3.5" />{label}
+            </button>
+          ))}
+        </div>
+      </Section>
 
       <Section title="Priority Thresholds">
         {(['critical', 'high', 'medium'] as const).map(k => (

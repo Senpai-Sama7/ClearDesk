@@ -23,7 +23,7 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
     <div
       className="fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-transform duration-500 ease-in-out"
       style={{
-        backgroundColor: visible ? '#0A0A0F' : '#000000',
+        backgroundColor: visible ? 'var(--color-bg)' : '#000000',
         transform: exiting ? 'translateY(-100%)' : 'translateY(0)',
       }}
     >
