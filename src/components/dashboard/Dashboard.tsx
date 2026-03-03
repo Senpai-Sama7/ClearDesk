@@ -192,7 +192,7 @@ function DashboardHome({ onNavigate }: { onNavigate: (v: string) => void }) {
           className="font-heading text-5xl md:text-6xl font-bold text-text-primary transition-all duration-700"
           style={{ opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(20px)' }}
         >
-          Clear<span className="text-accent">Desk</span>
+          Clear<span className="text-accent-text">Desk</span>
         </h1>
         <p
           className="mt-4 text-lg text-text-secondary max-w-xl mx-auto transition-all duration-700 delay-200"
@@ -205,7 +205,7 @@ function DashboardHome({ onNavigate }: { onNavigate: (v: string) => void }) {
           style={{ opacity: visible ? 1 : 0 }}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-          <span className="font-mono text-[11px] text-accent tracking-widest uppercase">Powered by Claude</span>
+          <span className="font-mono text-[11px] text-accent-text tracking-widest uppercase">Powered by Claude</span>
         </div>
       </div>
 
@@ -231,7 +231,7 @@ function DashboardHome({ onNavigate }: { onNavigate: (v: string) => void }) {
                 onClick={() => setChartMetric(o.id)}
                 className={`px-3 py-1 rounded-md text-xs transition-colors ${
                   chartMetric === o.id
-                    ? 'bg-accent/15 text-accent'
+                    ? 'bg-accent/15 text-accent-text'
                     : 'text-text-secondary hover:text-text-primary hover:bg-surface'
                 }`}
               >
@@ -286,7 +286,7 @@ function DashboardHome({ onNavigate }: { onNavigate: (v: string) => void }) {
               <span className="text-xl">{a.icon}</span>
               <span className="text-accent text-sm opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all">→</span>
             </div>
-            <h3 className="mt-2 text-sm font-medium text-accent">{a.title}</h3>
+            <h3 className="mt-2 text-sm font-medium text-accent-text">{a.title}</h3>
             <p className="mt-1 text-[12px] text-text-secondary leading-relaxed">{a.desc}</p>
           </button>
         ))}
