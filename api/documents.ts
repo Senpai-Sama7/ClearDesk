@@ -16,7 +16,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'Cloudflare KV not configured' });
   }
 
-  const userId = (req.method === 'GET' ? req.query.userId : req.body?.userId) as string;
+  const url = new URL(req.url || '', `http://${req.headers.host}`);
+  const userId = (req.method === 'GET' ? url.searchParams.get('userId') : req.body?.userId) as string;
   if (!userId || !/^[a-f0-9-]{36}$/.test(userId)) {
     return res.status(400).json({ error: 'Invalid userId' });
   }
