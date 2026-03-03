@@ -49,7 +49,7 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
 
       {/* Subheading */}
       <p
-        className="mt-5 text-base text-text-secondary text-center max-w-[480px] leading-relaxed transition-all duration-700 delay-300"
+        className="mt-5 text-base text-[#A8A8B8] text-center max-w-[480px] leading-relaxed transition-all duration-700 delay-300"
         style={{ opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(16px)' }}
       >
         Upload any AR document. Claude AI extracts, prioritizes, and flags what your team needs to act on.
@@ -63,7 +63,7 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
         {features.map(({ icon: Icon, label }) => (
           <div key={label} className="flex flex-col items-center gap-2.5">
             <Icon className="w-5 h-5 text-text-secondary" />
-            <span className="text-xs text-text-secondary text-center max-w-[140px]">{label}</span>
+            <span className="text-xs text-[#A8A8B8] text-center max-w-[140px]">{label}</span>
           </div>
         ))}
       </div>

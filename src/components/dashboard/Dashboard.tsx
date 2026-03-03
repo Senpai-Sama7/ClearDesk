@@ -218,7 +218,7 @@ function DashboardHome({ onNavigate }: { onNavigate: (v: string) => void }) {
           style={{ opacity: visible ? 1 : 0 }}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-          <span className="font-mono text-[11px] text-accent-text tracking-widest uppercase">Powered by Claude</span>
+          <span className="font-mono text-[11px] text-text-secondary tracking-widest uppercase">Powered by Claude</span>
         </div>
       </div>
 
@@ -244,7 +244,7 @@ function DashboardHome({ onNavigate }: { onNavigate: (v: string) => void }) {
                 onClick={() => setChartMetric(o.id)}
                 className={`px-3 py-1 rounded-md text-xs transition-colors ${
                   chartMetric === o.id
-                    ? 'bg-accent/15 text-accent-text'
+                    ? 'bg-accent/20 text-text-primary font-medium'
                     : 'text-text-secondary hover:text-text-primary hover:bg-surface'
                 }`}
               >
@@ -299,7 +299,7 @@ function DashboardHome({ onNavigate }: { onNavigate: (v: string) => void }) {
               <span className="text-xl">{a.icon}</span>
               <span className="text-accent text-sm opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all">→</span>
             </div>
-            <h3 className="mt-2 text-sm font-medium text-accent-text">{a.title}</h3>
+            <h3 className="mt-2 text-sm font-medium text-text-primary">{a.title}</h3>
             <p className="mt-1 text-[12px] text-text-secondary leading-relaxed">{a.desc}</p>
           </button>
         ))}
