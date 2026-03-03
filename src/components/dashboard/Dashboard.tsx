@@ -8,6 +8,7 @@ import { ExportPanel } from './ExportPanel';
 import { FileUpload } from '../upload/FileUpload';
 import { SampleDocuments } from './SampleDocuments';
 import { SettingsPanel } from './SettingsPanel';
+import { ChatPanel } from './ChatPanel';
 import { useDocuments } from '../../contexts/DocumentContext';
 import { Button } from '../ui/Button';
 import { Plus, Upload, X } from 'lucide-react';
@@ -99,6 +100,7 @@ export function Dashboard() {
 
       <DocumentDetail isOpen={isDetailOpen} onClose={() => { setIsDetailOpen(false); selectDocument(null); }} />
       <ExportPanel isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} />
+      <ChatPanel />
     </Layout>
   );
 }
