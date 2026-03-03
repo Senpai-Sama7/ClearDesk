@@ -118,20 +118,71 @@ const faqs = [
   { q: 'What AI models are used?', a: 'Claude Sonnet 4 for document analysis and Claude Haiku 4.5 for the chat assistant. API keys stay server-side.' },
 ];
 
-const capabilities: { icon: string; title: string; desc: string; nav?: string }[] = [
-  { icon: '🔍', title: 'Insights', desc: 'Entity extraction, priority scoring, and confidence analysis on every document.', nav: 'documents' },
-  { icon: '📝', title: 'Summaries', desc: 'Dual-language EN/ES summaries generated automatically — no extra steps.', nav: 'documents' },
-  { icon: '🚨', title: 'Escalations', desc: 'Configurable rules flag disputes, low-confidence extractions, and overdue amounts.', nav: 'documents' },
+const actions = [
+  { icon: '🔍', title: 'Insights', desc: 'View entity extraction, priority scoring, and confidence analysis.', nav: 'documents' },
+  { icon: '📝', title: 'Summaries', desc: 'Read dual-language EN/ES summaries for every document.', nav: 'documents' },
+  { icon: '🚨', title: 'Escalations', desc: 'Review flagged disputes, low-confidence items, and overdue amounts.', nav: 'documents' },
+];
+
+const infoCards = [
   { icon: '💬', title: 'AI Chat', desc: 'Ask questions about your AR queue — get answers, draft emails, surface what needs attention.' },
   { icon: '📊', title: 'Classification', desc: 'Invoices, statements, payment confirmations, disputes, and credit notes — sorted automatically.' },
   { icon: '📤', title: 'Export', desc: 'Generate filtered summary reports for standups, reviews, or downstream systems.' },
 ];
 
+type ChartMetric = 'priority' | 'status' | 'type' | 'amount';
+const chartOptions: { id: ChartMetric; label: string }[] = [
+  { id: 'priority', label: 'By Priority' },
+  { id: 'status', label: 'By Status' },
+  { id: 'type', label: 'By Type' },
+  { id: 'amount', label: 'Top Amounts' },
+];
+
 function DashboardHome({ onNavigate }: { onNavigate: (v: string) => void }) {
   const [visible, setVisible] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [chartMetric, setChartMetric] = useState<ChartMetric>('priority');
+  const { state } = useDocuments();
+  const docs = state.documents;
 
   useState(() => { requestAnimationFrame(() => setVisible(true)); });
+
+  const chartData = (() => {
+    if (chartMetric === 'priority') {
+      const groups = { critical: 0, high: 0, medium: 0, low: 0 };
+      docs.forEach(d => { if (d.priority in groups) groups[d.priority as keyof typeof groups]++; });
+      return [
+        { label: 'Critical', value: groups.critical, color: '#FF4444' },
+        { label: 'High', value: groups.high, color: '#FF8800' },
+        { label: 'Medium', value: groups.medium, color: '#FFCC00' },
+        { label: 'Low', value: groups.low, color: '#00FF94' },
+      ];
+    }
+    if (chartMetric === 'status') {
+      const groups: Record<string, number> = {};
+      docs.forEach(d => { groups[d.status] = (groups[d.status] || 0) + 1; });
+      const colors: Record<string, string> = { pending: '#6B6B80', processing: '#FFCC00', 'in-review': '#FF8800', completed: '#00FF94', escalated: '#FF4444' };
+      return Object.entries(groups).map(([k, v]) => ({ label: k.replace('-', ' '), value: v, color: colors[k] || '#6B6B80' }));
+    }
+    if (chartMetric === 'type') {
+      const groups: Record<string, number> = {};
+      docs.forEach(d => { groups[d.type] = (groups[d.type] || 0) + 1; });
+      const palette = ['#00FF94', '#FF8800', '#FFCC00', '#FF4444', '#8B5CF6', '#6B6B80'];
+      return Object.entries(groups).map(([k, v], i) => ({ label: k.replace('-', ' '), value: v, color: palette[i % palette.length] }));
+    }
+    // amount — top 5 by dollar value
+    return [...docs]
+      .filter(d => d.extractedData?.amount)
+      .sort((a, b) => (b.extractedData?.amount ?? 0) - (a.extractedData?.amount ?? 0))
+      .slice(0, 5)
+      .map((d, i) => ({
+        label: d.extractedData?.customerName || d.originalName.slice(0, 15),
+        value: d.extractedData?.amount ?? 0,
+        color: ['#00FF94', '#FF8800', '#FFCC00', '#8B5CF6', '#FF4444'][i],
+      }));
+  })();
+
+  const maxVal = Math.max(...chartData.map(d => d.value), 1);
 
   return (
     <div className="max-w-4xl mx-auto py-8">
@@ -160,45 +211,111 @@ function DashboardHome({ onNavigate }: { onNavigate: (v: string) => void }) {
 
       {/* Stats dashboard */}
       <div
-        className="mb-12 transition-all duration-700 delay-300"
+        className="mb-8 transition-all duration-700 delay-300"
         style={{ opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(16px)' }}
       >
         <StatsOverview />
       </div>
 
-      {/* Capability cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-16">
-        {capabilities.map((c, i) => {
-          const Tag = c.nav ? 'button' as const : 'div' as const;
-          return (
-            <Tag
-              key={c.title}
-              {...(c.nav ? { onClick: () => onNavigate(c.nav!) } : {})}
-              className={`bg-surface border border-border rounded-lg p-5 text-left transition-all duration-300 ${
-                c.nav ? 'hover:border-accent/40 hover:bg-accent/5 cursor-pointer group' : 'hover:border-accent/30'
-              }`}
-              style={{
-                opacity: visible ? 1 : 0,
-                transform: visible ? 'translateY(0)' : 'translateY(16px)',
-                transitionDelay: `${400 + i * 80}ms`,
-                transitionDuration: '600ms',
-              }}
-            >
-              <span className="text-2xl">{c.icon}</span>
-              <h3 className="mt-3 text-sm font-medium text-text-primary flex items-center gap-2">
-                {c.title}
-                {c.nav && <span className="text-accent opacity-0 group-hover:opacity-100 transition-opacity text-xs">→</span>}
-              </h3>
-              <p className="mt-1 text-[13px] text-text-secondary leading-relaxed">{c.desc}</p>
-            </Tag>
-          );
-        })}
+      {/* Chart with metric selector */}
+      <div
+        className="bg-surface border border-border rounded-lg p-5 mb-10 transition-all duration-700 delay-[400ms]"
+        style={{ opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(16px)' }}
+      >
+        <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+          <h2 className="text-sm font-medium text-text-primary">Analytics</h2>
+          <div className="flex gap-1">
+            {chartOptions.map(o => (
+              <button
+                key={o.id}
+                onClick={() => setChartMetric(o.id)}
+                className={`px-3 py-1 rounded-md text-xs transition-colors ${
+                  chartMetric === o.id
+                    ? 'bg-accent/15 text-accent'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-surface'
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {docs.length === 0 ? (
+          <p className="text-sm text-text-secondary text-center py-8">Upload documents to see analytics</p>
+        ) : (
+          <div className="space-y-3">
+            {chartData.map((d, i) => (
+              <div key={d.label + i} className="flex items-center gap-3">
+                <span className="text-xs text-text-secondary w-20 truncate capitalize text-right">{d.label}</span>
+                <div className="flex-1 h-7 bg-bg rounded overflow-hidden">
+                  <div
+                    className="h-full rounded transition-all duration-700 ease-out flex items-center px-2"
+                    style={{
+                      width: `${Math.max((d.value / maxVal) * 100, d.value > 0 ? 8 : 0)}%`,
+                      backgroundColor: d.color + '30',
+                      borderLeft: `3px solid ${d.color}`,
+                      transitionDelay: `${500 + i * 100}ms`,
+                    }}
+                  >
+                    <span className="font-mono text-xs" style={{ color: d.color }}>
+                      {chartMetric === 'amount' ? `$${d.value.toLocaleString()}` : d.value}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Action buttons — visually distinct */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        {actions.map((a, i) => (
+          <button
+            key={a.title}
+            onClick={() => onNavigate(a.nav)}
+            className="group bg-accent/5 border border-accent/20 rounded-lg p-4 text-left hover:bg-accent/10 hover:border-accent/40 transition-all duration-300 cursor-pointer"
+            style={{
+              opacity: visible ? 1 : 0,
+              transform: visible ? 'translateY(0)' : 'translateY(16px)',
+              transitionDelay: `${600 + i * 80}ms`,
+              transitionDuration: '600ms',
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xl">{a.icon}</span>
+              <span className="text-accent text-sm opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all">→</span>
+            </div>
+            <h3 className="mt-2 text-sm font-medium text-accent">{a.title}</h3>
+            <p className="mt-1 text-[12px] text-text-secondary leading-relaxed">{a.desc}</p>
+          </button>
+        ))}
+      </div>
+
+      {/* Info cards — muted, non-interactive */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-16">
+        {infoCards.map((c, i) => (
+          <div
+            key={c.title}
+            className="bg-surface border border-border rounded-lg p-4"
+            style={{
+              opacity: visible ? 1 : 0,
+              transform: visible ? 'translateY(0)' : 'translateY(16px)',
+              transitionDelay: `${840 + i * 80}ms`,
+              transitionDuration: '600ms',
+            }}
+          >
+            <span className="text-xl">{c.icon}</span>
+            <h3 className="mt-2 text-sm font-medium text-text-primary">{c.title}</h3>
+            <p className="mt-1 text-[12px] text-text-secondary leading-relaxed">{c.desc}</p>
+          </div>
+        ))}
       </div>
 
       {/* FAQ */}
       <div
         className="transition-all duration-700"
-        style={{ opacity: visible ? 1 : 0, transitionDelay: '900ms' }}
+        style={{ opacity: visible ? 1 : 0, transitionDelay: '1100ms' }}
       >
         <h2 className="font-heading text-lg font-semibold text-text-primary mb-4">FAQ</h2>
         <div className="space-y-1">
