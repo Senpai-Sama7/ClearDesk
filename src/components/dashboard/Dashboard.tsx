@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Layout } from './Layout';
 import { StatsOverview } from './StatsOverview';
 import { FilterPanel } from './FilterPanel';
@@ -19,6 +19,7 @@ export function Dashboard() {
   const [activeView, setActiveView] = useState('dashboard');
   const [showUpload, setShowUpload] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(() => !!localStorage.getItem('cleardesk_banner_dismissed'));
+  const handleFilesRef = useRef<((files: File[]) => void) | null>(null);
 
   const dismissBanner = () => { setBannerDismissed(true); localStorage.setItem('cleardesk_banner_dismissed', '1'); };
 
@@ -66,8 +67,8 @@ export function Dashboard() {
                 <h2 className="text-sm font-medium text-text-primary">Upload Documents</h2>
                 <button onClick={() => setShowUpload(false)} className="text-text-secondary hover:text-text-primary text-sm">Close</button>
               </div>
-              <FileUpload />
-              <SampleDocuments />
+              <FileUpload onHandleFiles={(h) => { handleFilesRef.current = h; }} />
+              <SampleDocuments onProcessFile={(file) => handleFilesRef.current?.([file])} />
             </div>
           )}
 

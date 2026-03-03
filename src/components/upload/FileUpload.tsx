@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import { Upload, File, X, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { classNames, formatFileSize, generateId } from '../../utils/formatters';
 import { isValidDocumentFile, extractTextFromFile } from '../../utils/fileProcessing';
@@ -19,7 +19,7 @@ interface UploadingFile {
   error?: string;
 }
 
-export function FileUpload() {
+export function FileUpload({ onHandleFiles }: { onHandleFiles?: (handler: (files: File[]) => void) => void } = {}) {
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<UploadingFile[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -93,7 +93,10 @@ export function FileUpload() {
 
     setFiles(p => [...p, ...valid, ...invalid]);
     valid.forEach(processFile);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Expose handleFiles to parent
+  useEffect(() => { onHandleFiles?.((files) => handleFiles(files)); }, [handleFiles, onHandleFiles]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
