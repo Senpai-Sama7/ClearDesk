@@ -38,8 +38,8 @@ export function Layout({ children, onNavigate, activeView = 'dashboard' }: Layou
       )}>
         <div className="flex items-center justify-between px-5 h-14 border-b border-border">
           <span className="font-heading text-lg font-bold text-text-primary tracking-tight">ClearDesk</span>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-text-secondary hover:text-text-primary">
-            <X className="w-5 h-5" />
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-text-secondary hover:text-text-primary" aria-label="Close sidebar">
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -68,15 +68,16 @@ export function Layout({ children, onNavigate, activeView = 'dashboard' }: Layou
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 bg-bg border-b border-border sticky top-0 z-30 flex items-center justify-between px-4 lg:px-8">
           <div className="flex items-center gap-4">
-            <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-text-secondary hover:text-text-primary">
-              <Menu className="w-5 h-5" />
+            <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-text-secondary hover:text-text-primary" aria-label="Open sidebar">
+              <Menu className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
 
           <div data-tour="search" className="flex items-center bg-surface border border-border rounded-lg px-3 py-1.5 w-64 lg:w-80">
-            <Search className="w-4 h-4 text-text-secondary mr-2 flex-shrink-0" />
+            <Search className="w-4 h-4 text-text-secondary mr-2 flex-shrink-0" aria-hidden="true" />
             <input
               type="text"
+              aria-label="Search documents"
               placeholder="Search documents…"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
