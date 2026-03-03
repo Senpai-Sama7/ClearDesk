@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { Layout } from './Layout';
+import { StatsOverview } from './StatsOverview';
 
 import { FilterPanel } from './FilterPanel';
 import { DocumentCard } from './DocumentCard';
@@ -97,7 +98,7 @@ export function Dashboard() {
           )}
         </div>
       ) : (
-        <DashboardHome />
+        <DashboardHome onNavigate={handleNavigate} />
       )}
 
       <DocumentDetail isOpen={isDetailOpen} onClose={() => { setIsDetailOpen(false); selectDocument(null); }} />
@@ -115,16 +116,16 @@ const faqs = [
   { q: 'What AI models are used?', a: 'Claude Sonnet 4 for document analysis and Claude Haiku 4.5 for the chat assistant. API keys stay server-side.' },
 ];
 
-const capabilities = [
-  { icon: '🔍', title: 'Insights', desc: 'Entity extraction, priority scoring, and confidence analysis on every document.' },
-  { icon: '📝', title: 'Summaries', desc: 'Dual-language EN/ES summaries generated automatically — no extra steps.' },
-  { icon: '🚨', title: 'Escalations', desc: 'Configurable rules flag disputes, low-confidence extractions, and overdue amounts.' },
+const capabilities: { icon: string; title: string; desc: string; nav?: string }[] = [
+  { icon: '🔍', title: 'Insights', desc: 'Entity extraction, priority scoring, and confidence analysis on every document.', nav: 'documents' },
+  { icon: '📝', title: 'Summaries', desc: 'Dual-language EN/ES summaries generated automatically — no extra steps.', nav: 'documents' },
+  { icon: '🚨', title: 'Escalations', desc: 'Configurable rules flag disputes, low-confidence extractions, and overdue amounts.', nav: 'documents' },
   { icon: '💬', title: 'AI Chat', desc: 'Ask questions about your AR queue — get answers, draft emails, surface what needs attention.' },
   { icon: '📊', title: 'Classification', desc: 'Invoices, statements, payment confirmations, disputes, and credit notes — sorted automatically.' },
   { icon: '📤', title: 'Export', desc: 'Generate filtered summary reports for standups, reviews, or downstream systems.' },
 ];
 
-function DashboardHome() {
+function DashboardHome({ onNavigate }: { onNavigate: (v: string) => void }) {
   const [visible, setVisible] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -133,7 +134,7 @@ function DashboardHome() {
   return (
     <div className="max-w-4xl mx-auto py-8">
       {/* Animated header */}
-      <div className="text-center mb-16">
+      <div className="text-center mb-12">
         <h1
           className="font-heading text-5xl md:text-6xl font-bold text-text-primary transition-all duration-700"
           style={{ opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(20px)' }}
@@ -155,24 +156,41 @@ function DashboardHome() {
         </div>
       </div>
 
+      {/* Stats dashboard */}
+      <div
+        className="mb-12 transition-all duration-700 delay-300"
+        style={{ opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(16px)' }}
+      >
+        <StatsOverview />
+      </div>
+
       {/* Capability cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-16">
-        {capabilities.map((c, i) => (
-          <div
-            key={c.title}
-            className="bg-surface border border-border rounded-lg p-5 hover:border-accent/30 transition-all duration-300"
-            style={{
-              opacity: visible ? 1 : 0,
-              transform: visible ? 'translateY(0)' : 'translateY(16px)',
-              transitionDelay: `${400 + i * 80}ms`,
-              transitionDuration: '600ms',
-            }}
-          >
-            <span className="text-2xl">{c.icon}</span>
-            <h3 className="mt-3 text-sm font-medium text-text-primary">{c.title}</h3>
-            <p className="mt-1 text-[13px] text-text-secondary leading-relaxed">{c.desc}</p>
-          </div>
-        ))}
+        {capabilities.map((c, i) => {
+          const Tag = c.nav ? 'button' as const : 'div' as const;
+          return (
+            <Tag
+              key={c.title}
+              {...(c.nav ? { onClick: () => onNavigate(c.nav!) } : {})}
+              className={`bg-surface border border-border rounded-lg p-5 text-left transition-all duration-300 ${
+                c.nav ? 'hover:border-accent/40 hover:bg-accent/5 cursor-pointer group' : 'hover:border-accent/30'
+              }`}
+              style={{
+                opacity: visible ? 1 : 0,
+                transform: visible ? 'translateY(0)' : 'translateY(16px)',
+                transitionDelay: `${400 + i * 80}ms`,
+                transitionDuration: '600ms',
+              }}
+            >
+              <span className="text-2xl">{c.icon}</span>
+              <h3 className="mt-3 text-sm font-medium text-text-primary flex items-center gap-2">
+                {c.title}
+                {c.nav && <span className="text-accent opacity-0 group-hover:opacity-100 transition-opacity text-xs">→</span>}
+              </h3>
+              <p className="mt-1 text-[13px] text-text-secondary leading-relaxed">{c.desc}</p>
+            </Tag>
+          );
+        })}
       </div>
 
       {/* FAQ */}
