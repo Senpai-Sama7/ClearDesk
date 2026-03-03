@@ -37,8 +37,12 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
 
       {/* Headline */}
       <h1
-        className="font-heading text-4xl md:text-5xl font-bold text-text-primary text-center transition-all duration-700 delay-150"
-        style={{ opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(16px)' }}
+        className="font-heading text-4xl md:text-5xl font-bold text-center transition-all duration-700 delay-150 bg-clip-text text-transparent bg-[length:200%_100%] animate-[shimmer_4s_ease-in-out_infinite]"
+        style={{
+          opacity: visible ? 1 : 0,
+          transform: visible ? 'translateY(0)' : 'translateY(16px)',
+          backgroundImage: 'linear-gradient(90deg, var(--color-text-primary) 0%, var(--color-accent) 25%, var(--color-accent-text) 50%, var(--color-accent) 75%, var(--color-text-primary) 100%)',
+        }}
       >
         Accounts Receivable Intelligence.
       </h1>

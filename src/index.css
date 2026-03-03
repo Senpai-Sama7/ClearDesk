@@ -31,6 +31,11 @@
   --animate-fade-up: fade-up 0.4s ease-out both;
 }
 
+@keyframes shimmer {
+  0%, 100% { background-position: 100% 50%; }
+  50% { background-position: 0% 50%; }
+}
+
 @keyframes fade-up {
   from {
     opacity: 0;
