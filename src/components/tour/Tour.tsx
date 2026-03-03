@@ -33,8 +33,8 @@ export function Tour({ onComplete }: { onComplete: () => void }) {
   return (
     <>
       {/* Dark overlay with spotlight cutout — visual only */}
-      <div className="fixed inset-0 z-[10000] pointer-events-none">
-        <svg className="w-full h-full">
+      <div className="fixed inset-0 z-[10000] pointer-events-none overflow-hidden">
+        <svg className="absolute inset-0 w-full h-full">
           <defs>
             <mask id="tour-mask">
               <rect width="100%" height="100%" fill="white" />
