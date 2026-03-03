@@ -131,9 +131,9 @@ export function SampleDocuments({ onProcessFile }: Props) {
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
-            <div className="flex-1 overflow-auto">
+            <div className="flex-1 overflow-hidden">
               {preview.endsWith('.pdf') ? (
-                <iframe src={`/samples/${encodeURIComponent(preview)}`} className="w-full h-full min-h-[24rem]" title="Sample preview" />
+                <iframe src={`/samples/${encodeURIComponent(preview)}`} className="w-full h-[25rem] border-0" title="Sample preview" />
               ) : preview.endsWith('.docx') ? (
                 <div className="p-4 text-sm text-text-primary prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: previewContent ?? '<p>Loading…</p>' }} />
               ) : (
