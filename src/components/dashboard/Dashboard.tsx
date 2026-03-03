@@ -10,7 +10,7 @@ import { SampleDocuments } from './SampleDocuments';
 import { SettingsPanel } from './SettingsPanel';
 import { useDocuments } from '../../contexts/DocumentContext';
 import { Button } from '../ui/Button';
-import { Plus, Upload } from 'lucide-react';
+import { Plus, Upload, X } from 'lucide-react';
 
 export function Dashboard() {
   const { filteredDocuments, selectDocument } = useDocuments();
@@ -18,6 +18,9 @@ export function Dashboard() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [activeView, setActiveView] = useState('dashboard');
   const [showUpload, setShowUpload] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(() => !!localStorage.getItem('cleardesk_banner_dismissed'));
+
+  const dismissBanner = () => { setBannerDismissed(true); localStorage.setItem('cleardesk_banner_dismissed', '1'); };
 
   const handleCardClick = (id: string) => {
     selectDocument(id);
@@ -47,6 +50,13 @@ export function Dashboard() {
               Upload
             </Button>
           </div>
+
+          {!bannerDismissed && (
+            <div className="mb-6 flex items-center justify-between bg-accent/5 border border-accent/20 rounded-lg px-4 py-3">
+              <p className="text-sm text-text-secondary">Upload any AR document to get started — invoices, PDFs, images, Excel files, and more are all supported.</p>
+              <button onClick={dismissBanner} className="text-text-secondary hover:text-text-primary ml-4 flex-shrink-0" aria-label="Dismiss"><X className="w-4 h-4" /></button>
+            </div>
+          )}
 
           <StatsOverview />
 
