@@ -31,11 +31,11 @@ export function Dashboard() {
 
   const handleNavigate = (view: string) => {
     if (view === 'upload') {
-      setActiveView('documents');
+      setActiveView('upload');
       setShowUpload(true);
     } else {
       setActiveView(view);
-      setShowUpload(false);
+      setShowUpload(view === 'documents' && showUpload);
     }
   };
 
@@ -47,11 +47,13 @@ export function Dashboard() {
         <HelpPanel />
       ) : activeView === 'about' ? (
         <AboutPanel />
-      ) : activeView === 'documents' ? (
+      ) : activeView === 'documents' || activeView === 'upload' ? (
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="font-heading text-2xl font-bold text-text-primary">Documents</h1>
+              <h1 className="font-heading text-2xl font-bold text-text-primary">
+                {activeView === 'upload' ? 'Upload & Process' : 'Documents'}
+              </h1>
               <p className="text-sm text-text-secondary mt-1">
                 {filteredDocuments.length} document{filteredDocuments.length !== 1 ? 's' : ''}
               </p>
