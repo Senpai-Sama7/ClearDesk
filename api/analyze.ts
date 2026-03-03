@@ -33,11 +33,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'prompt-caching-2024-07-31',
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4096,
-        system: `You are an expert AI assistant for accounts receivable document processing.
+        system: [{ type: 'text', text: `You are an expert AI assistant for accounts receivable document processing.
 Analyze the provided document and return ONLY a JSON response:
 {
   "documentType": "invoice" | "statement" | "payment_confirmation" | "dispute" | "credit_note" | "other",
@@ -72,7 +73,7 @@ OTHER RULES:
 - actionDeadline: the single most important date — due date, response deadline, or dispute window. null if none found.
 - escalationReasons severity: "blocking" = cannot proceed without human, "warning" = should review but can proceed, "informational" = FYI only.
 - summary: exactly 3 sentences max. Sentence 1: what this document IS and who it involves. Sentence 2: what ACTION is required and by when. Sentence 3 (only if escalation): why this needs human attention. Write in plain, clear English for someone whose first language is not English. Never exceed 3 sentences.
-Return ONLY JSON.`,
+Return ONLY JSON.`, cache_control: { type: 'ephemeral' } }],
         messages: [{ role: 'user', content: `Analyze this document:\n\nFilename: ${filename}${truncated ? '\n\n[NOTE: Document truncated to first 50,000 characters]' : ''}\n\nContent:\n${safeContent}` }],
       }),
     });
