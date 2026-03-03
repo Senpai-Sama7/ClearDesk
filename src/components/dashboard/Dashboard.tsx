@@ -9,6 +9,7 @@ import { FileUpload } from '../upload/FileUpload';
 import { SampleDocuments } from './SampleDocuments';
 import { SettingsPanel } from './SettingsPanel';
 import { HelpPanel } from './HelpPanel';
+import { AboutPanel } from './AboutPanel';
 import { ChatPanel } from './ChatPanel';
 import { useDocuments } from '../../contexts/DocumentContext';
 import { Button } from '../ui/Button';
@@ -47,6 +48,8 @@ export function Dashboard() {
         <SettingsPanel />
       ) : activeView === 'help' ? (
         <HelpPanel />
+      ) : activeView === 'about' ? (
+        <AboutPanel />
       ) : activeView === 'documents' ? (
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8">
