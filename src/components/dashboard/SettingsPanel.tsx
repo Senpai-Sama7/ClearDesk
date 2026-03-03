@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useDocuments } from '../../contexts/DocumentContext';
 import { Button } from '../ui/Button';
-import { Trash2, RotateCcw, X, Sun, Moon, Monitor } from 'lucide-react';
+import { Trash2, RotateCcw, X, Sun, Moon, Monitor, Copy, Download } from 'lucide-react';
 import { classNames } from '../../utils/formatters';
 import { getThresholds, getEscalationRules, getTeamMembers, saveThresholds, saveEscalationRules, saveTeamMembers } from '../../utils/settings';
 import type { Thresholds, EscalationRules } from '../../utils/settings';
 import { useTheme } from '../../hooks/useTheme';
+import { getUserId, setUserId, pullFromKV } from '../../services/syncService';
+import type { Document } from '../../types/document';
 
 interface SettingsPanelProps { onStartTour: () => void; }
 
@@ -22,6 +24,30 @@ export function SettingsPanel({ onStartTour }: SettingsPanelProps) {
   const [rules, setRules] = useState(getEscalationRules);
   const [team, setTeam] = useState(getTeamMembers);
   const [newMember, setNewMember] = useState('');
+  const [syncCode, setSyncCode] = useState('');
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
+
+  const copySyncCode = () => {
+    navigator.clipboard.writeText(getUserId());
+    setSyncStatus('Copied!');
+    setTimeout(() => setSyncStatus(null), 2000);
+  };
+
+  const importSyncCode = async () => {
+    const code = syncCode.trim().toLowerCase();
+    if (!/^[a-f0-9-]{36}$/.test(code)) { setSyncStatus('Invalid code'); return; }
+    setSyncStatus('Pulling…');
+    const docs = await pullFromKV(code);
+    if (docs && docs.length > 0) {
+      setUserId(code);
+      dispatch({ type: 'SET_DOCUMENTS', payload: docs as Document[] });
+      setSyncCode('');
+      setSyncStatus(`Imported ${docs.length} document${docs.length !== 1 ? 's' : ''}`);
+    } else {
+      setSyncStatus('No documents found for that code');
+    }
+    setTimeout(() => setSyncStatus(null), 3000);
+  };
 
   const saveT = (t: Thresholds) => { setThresholds(t); saveThresholds(t); };
   const saveR = (r: EscalationRules) => { setRules(r); saveEscalationRules(r); };
@@ -73,6 +99,20 @@ export function SettingsPanel({ onStartTour }: SettingsPanelProps) {
             </button>
           ))}
         </div>
+      </Section>
+
+      <Section title="Cross-Device Sync">
+        <div className="flex items-center gap-2">
+          <code className="flex-1 bg-bg border border-border rounded px-3 py-1.5 text-xs font-mono text-text-secondary truncate">{getUserId()}</code>
+          <Button variant="secondary" size="sm" onClick={copySyncCode} leftIcon={<Copy className="w-3.5 h-3.5" />}>Copy</Button>
+        </div>
+        <div className="flex gap-2">
+          <input value={syncCode} onChange={e => setSyncCode(e.target.value)} placeholder="Enter sync code from another device…"
+            className="flex-1 bg-bg border border-border rounded px-3 py-1.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-border-hover focus:outline-none font-mono" />
+          <Button variant="secondary" size="sm" onClick={importSyncCode} disabled={!syncCode.trim()} leftIcon={<Download className="w-3.5 h-3.5" />}>Import</Button>
+        </div>
+        {syncStatus && <p className="text-xs text-accent">{syncStatus}</p>}
+        <p className="text-[11px] text-text-secondary">Share your sync code to access documents on another device. No account required.</p>
       </Section>
 
       <Section title="Priority Thresholds">

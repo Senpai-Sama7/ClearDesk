@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useReducer, useCallback, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useMemo, useEffect, useRef } from 'react';
 import type { Document, DocumentFilters, DocumentStatus, DailySummary } from '../types/document';
 import { generateId } from '../utils/formatters';
+import { getUserId, syncToKV, pullFromKV } from '../services/syncService';
 const STORAGE_KEY = 'cleardesk_documents';
 
 function loadDocuments(): Document[] {
@@ -124,10 +125,24 @@ export function DocumentProvider({ children }: { children: React.ReactNode }) {
     error: null,
   });
 
-  // Persist to localStorage on every document change
+  const hydrated = useRef(false);
+
+  // Persist to localStorage + background KV sync on every change
   useEffect(() => {
     saveDocuments(state.documents);
+    if (hydrated.current) syncToKV(state.documents);
   }, [state.documents]);
+
+  // Hydrate from KV on first load
+  useEffect(() => {
+    getUserId(); // ensure ID exists
+    pullFromKV().then(docs => {
+      if (docs && state.documents.length === 0) {
+        dispatch({ type: 'SET_DOCUMENTS', payload: docs as Document[] });
+      }
+      hydrated.current = true;
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredDocuments = useMemo(() => {
     return state.documents.filter((doc) => {
